@@ -1,0 +1,13 @@
+flutter_native_splash:
+ color: "E0D7D7"
+ color_dark: "#272727"
+ image: 'Assets/App_Assets/authentication_assets/LogoWithBack.png'
+ image_dark: 'Assets/App_Assets/authentication_assets/LogoWithBack.png'
+
+ android_12:
+  color: "E0D7D7"
+  color_dark: "#272727"
+  image: 'Assets/App_Assets/authentication_assets/LogoWithBack.png'
+  image_dark: 'Assets/App_Assets/authentication_assets/LogoWithBack.png'
+
+ web: false
