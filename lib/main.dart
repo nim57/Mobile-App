@@ -1,4 +1,4 @@
-import 'package:echo_project_123/authentication_files/data/repositories/authentication_repository.dart';
+import 'package:echo_project_123/authentication_files/data/repositories/authentication/authentication_repository.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
