@@ -1,6 +1,5 @@
 import 'package:echo_project_123/authentication_files/featuers/authentication/screens/login/login.dart';
 import 'package:echo_project_123/authentication_files/featuers/authentication/screens/onboarding/onboarding.dart';
-import 'package:echo_project_123/authentication_files/featuers/authentication/screens/onboarding/widgets/onboarding_skip.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:get/get_core/src/get_main.dart';

@@ -4,10 +4,7 @@ import '../../Utils/constants/colors.dart';
 import '../../Utils/constants/sizes.dart';
 import '../../Utils/helpers/helper_function.dart';
 import '../../common/widgets/appbar/appbar.dart';
-import '../widgets/Home_appBar.dart';
-import '../widgets/Search_bar.dart';
 import '../widgets/Tab_controller.dart';
-import '../widgets/setting_icon.dart';
 import 'Image_video_Screen.dart';
 import 'New_text_post.dart';
 
@@ -18,7 +15,7 @@ class AddNewPost extends StatelessWidget {
   Widget build(BuildContext context) {
     final dark = EHelperFunctions.isDarkMode(context);
     return DefaultTabController(
-      length: 2,  // Number of tabs
+      length: 2, // Number of tabs
       child: Scaffold(
         // Appbar
         appBar: EAppBar(

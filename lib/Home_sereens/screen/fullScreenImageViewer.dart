@@ -13,10 +13,10 @@ class FullScreenImageViewerState extends StatefulWidget {
   final int initialIndex;
 
   const FullScreenImageViewerState({
-    Key? key,
+    super.key,
     required this.mediaFiles,
     required this.initialIndex,
-  }) : super(key: key);
+  });
 
   @override
   _FullScreenImageViewerState createState() => _FullScreenImageViewerState();
@@ -75,14 +75,15 @@ class _FullScreenImageViewerState extends State<FullScreenImageViewerState> {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: EAppBar(
-        titlt: Text("Create Post",style: TextStyle(color: Colors.black),),
+        titlt: Text(
+          "Create Post",
+          style: TextStyle(color: Colors.black),
+        ),
         showBackArrow: true,
       ),
-      body:
-      Column(
+      body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-
           Row(
             children: [
               /// Profile_pic
@@ -97,34 +98,33 @@ class _FullScreenImageViewerState extends State<FullScreenImageViewerState> {
                     "@NimeshSandaruwan",
                     style: Theme.of(context).textTheme.bodySmall,
                   ),
-
-                  
                 ],
               ),
               const SizedBox(width: ESizes.spaceBtwItems),
             ],
           ),
           SizedBox(width: ESizes.spaceBtwItems),
-
           Center(
             child: widget.mediaFiles[currentIndex].type == AssetType.video
-                ? _videoController != null && _videoController!.value.isInitialized
-                ? AspectRatio(
-              aspectRatio: _videoController!.value.aspectRatio,
-              child: VideoPlayer(_videoController!),
-            )
-                : const CircularProgressIndicator()
+                ? _videoController != null &&
+                        _videoController!.value.isInitialized
+                    ? AspectRatio(
+                        aspectRatio: _videoController!.value.aspectRatio,
+                        child: VideoPlayer(_videoController!),
+                      )
+                    : const CircularProgressIndicator()
                 : FutureBuilder<Uint8List?>(
-              future: widget.mediaFiles[currentIndex].originBytes,
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.done &&
-                    snapshot.hasData) {
-                  return Image.memory(snapshot.data!, fit: BoxFit.contain);
-                } else {
-                  return const CircularProgressIndicator();
-                }
-              },
-            ),
+                    future: widget.mediaFiles[currentIndex].originBytes,
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.done &&
+                          snapshot.hasData) {
+                        return Image.memory(snapshot.data!,
+                            fit: BoxFit.contain);
+                      } else {
+                        return const CircularProgressIndicator();
+                      }
+                    },
+                  ),
           ),
         ],
       ),
