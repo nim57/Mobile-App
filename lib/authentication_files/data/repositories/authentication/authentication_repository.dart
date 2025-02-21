@@ -1,7 +1,9 @@
 import 'dart:io';
 
+import 'package:echo_project_123/Home_sereens/widgets/Navigation_menu/navigation_menu.dart';
 import 'package:echo_project_123/authentication_files/featuers/authentication/screens/login/login.dart';
 import 'package:echo_project_123/authentication_files/featuers/authentication/screens/onboarding/onboarding.dart';
+import 'package:echo_project_123/authentication_files/featuers/authentication/screens/signup/veryfy_email.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
@@ -28,22 +30,47 @@ class AuthenticationRepository extends GetxController {
 
   /// Function to Show Relevant Screen
   screenRedirect() async {
-    // Local Stroge
-    if (kDebugMode) {
-      print(
-          '============================ Get Storage Auth Repo ===================');
-      print(deviceStorage.read('IsFirstTime'));
+    final user = _auth.currentUser;
+    if (user != null) {
+      if (user.emailVerified) {
+        Get.offAll(() => const NavigationMenu());
+      } else {
+        Get.offAll(
+            () => VerifyEmailScreen(email: user.email ?? 'Email not found'));
+      }
+    } else {
+      // Local Stroge
+      deviceStorage.writeIfNull('IsFirstTime', true);
+
+      // Check if user is first time or not
+      deviceStorage.read('IsFirstTime') != true
+          ? Get.offAll(() => const LoginScreen())
+          : Get.offAll(const OnBoardingScreen());
     }
-
-    deviceStorage.writeIfNull('IsFirstTime', true);
-    deviceStorage.read('IsFirstTime') != true
-        ? Get.offAll(() => const LoginScreen())
-        : Get.offAll(const OnBoardingScreen());
   }
-
 /* =============================Email & Password sign-in =======================*/
 
-  /// [EmailAuthentication] - SignIn
+  /// [EmailAuthentication] - LOGIN
+
+  Future<UserCredential> loginWithEmailAndPassword(
+      String email, String password) async {
+    try {
+      return await _auth.signInWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+    } on FirebaseAuthException catch (e) {
+      throw FirebaseAuthException(code: e.code, message: e.message);
+    } on FirebaseException catch (e) {
+      throw FirebaseAuthException(code: e.code, message: e.message);
+    } on FormatException catch (_) {
+      throw FormatException('Invalid format');
+    } on PlatformException catch (e) {
+      throw PlatformException(code: e.code, message: e.message);
+    } catch (e) {
+      throw 'Something went wrong. Please try again later.';
+    }
+  }
 
   /// [EmailAuthentication] - REGISTER
 
@@ -70,6 +97,21 @@ class AuthenticationRepository extends GetxController {
   /// [ReAuthenticate] - ReAuthenticote User
 
   /// [EmailVerification] - MAIL VERIFICATION
+  Future<void> sendEmailVerification() async {
+    try {
+      await _auth.currentUser?.sendEmailVerification();
+    } on FirebaseAuthException catch (e) {
+      throw FirebaseAuthException(code: e.code, message: e.message);
+    } on FirebaseException catch (e) {
+      throw FirebaseAuthException(code: e.code, message: e.message);
+    } on FormatException catch (_) {
+      throw FormatException('Invalid format');
+    } on PlatformException catch (e) {
+      throw PlatformException(code: e.code, message: e.message);
+    } catch (e) {
+      throw 'Something went wrong. Please try again later.';
+    }
+  }
 
   /// [EmailAuthenticotion] - FORGET PASSWORD
 
@@ -82,6 +124,21 @@ class AuthenticationRepository extends GetxController {
 /*  ----------------------  ./end Federated identity & social sign-in -----------------------*/
 
   /// [LogoutUser] - Valid for any authentication.
+  Future<void> logout() async {
+    try {
+      await FirebaseAuth.instance.signOut();
+    } on FirebaseAuthException catch (e) {
+      throw FirebaseAuthException(code: e.code, message: e.message);
+    } on FirebaseException catch (e) {
+      throw FirebaseAuthException(code: e.code, message: e.message);
+    } on FormatException catch (_) {
+      throw FormatException('Invalid format');
+    } on PlatformException catch (e) {
+      throw PlatformException(code: e.code, message: e.message);
+    } catch (e) {
+      throw 'Something went wrong. Please try again later.';
+    }
+  }
 
   /// DELETE USER - Remove user Auth and Firestore Account.
 }
