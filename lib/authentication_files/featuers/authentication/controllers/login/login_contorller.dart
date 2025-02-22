@@ -2,6 +2,7 @@ import 'package:echo_project_123/Utils/popups/fullscreen_loader.dart';
 import 'package:echo_project_123/authentication_files/common/widgets/loaders/lodaders.dart';
 import 'package:echo_project_123/authentication_files/data/repositories/authentication/authentication_repository.dart';
 import 'package:echo_project_123/authentication_files/featuers/authentication/controllers/signup/network_manager.dart';
+import 'package:echo_project_123/authentication_files/featuers/personalization/user_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
@@ -16,6 +17,7 @@ class LoginContorller extends GetxController {
   final email = TextEditingController();
   final password = TextEditingController();
   GlobalKey<FormState> loginFormkey = GlobalKey<FormState>();
+  final userController = Get.put(UserController());
 
   @override
   void onInit() {
@@ -61,6 +63,39 @@ class LoginContorller extends GetxController {
       //Redirect
       AuthenticationRepository.instonce.screenRedirect();
     } catch (e) {
+      EFullScreenLoader.stopLoading();
+      ELoaders.errorsnackBar(title: 'oh Snap', message: e.toString());
+    }
+  }
+
+  /// -- Google Signin Authentication
+  Future<void> googleSignIn() async {
+    try {
+      // Start Loding
+      EFullScreenLoader.openLoadingDialog(
+          'Loging you in...', EImages.onboardingImage1);
+
+      // Check Internet Connection
+      final isConnected = await NetworkManager.instance.isConnected();
+      if (!isConnected) {
+        EFullScreenLoader.stopLoading();
+        return;
+      }
+
+      // Google Authentication
+      final userCredential =
+          await AuthenticationRepository.instonce.signInWithGoogle();
+
+      /// Save User Record
+      await userController.saveUserRecord(userCredential);
+
+      // Remove Loader
+      EFullScreenLoader.stopLoading();
+
+      //Redirect
+      AuthenticationRepository.instonce.screenRedirect();
+    } catch (e) {
+      // Remove Loader
       EFullScreenLoader.stopLoading();
       ELoaders.errorsnackBar(title: 'oh Snap', message: e.toString());
     }
