@@ -5,8 +5,8 @@ import '../../../../../../Home_sereens/widgets/Navigation_menu/navigation_menu.d
 import '../../../../../../Utils/constants/sizes.dart';
 import '../../../../../../Utils/constants/text_strings.dart';
 import '../../../../../../Utils/validators/validation.dart';
+import '../../../controllers/forget_password/forget_password.dart';
 import '../../../controllers/login/login_contorller.dart';
-import '../../onboarding/widgets/LOGIN PAGE.dart';
 import '../../signup/signup.dart';
 
 class LoginForm extends StatelessWidget {
@@ -79,7 +79,7 @@ class LoginForm extends StatelessWidget {
 
                 /// Forget password
                 TextButton(
-                    onPressed: () => Get.to(() => const Login()),
+                    onPressed: () => Get.to(() => const ForgetPassword()),
                     child: const Text(ETexts.forgotPassword)),
               ],
             ),

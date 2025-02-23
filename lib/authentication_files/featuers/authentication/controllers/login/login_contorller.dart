@@ -72,8 +72,7 @@ class LoginContorller extends GetxController {
   Future<void> googleSignIn() async {
     try {
       // Start Loding
-      EFullScreenLoader.openLoadingDialog(
-          'Loging you in...', EImages.onboardingImage1);
+      EFullScreenLoader.openLoadingDialog('Loging you in...', EImages.user1);
 
       // Check Internet Connection
       final isConnected = await NetworkManager.instance.isConnected();
