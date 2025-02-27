@@ -27,19 +27,19 @@ class EUserProfileTile extends StatelessWidget {
         style: Theme.of(context)
             .textTheme
             .headlineSmall!
-            .apply(color: EColor.white),
+            .apply(color: EColor.black),
       ),
       subtitle: Text(
         controller.user.value.email,
         style:
-            Theme.of(context).textTheme.bodySmall!.apply(color: EColor.white),
+            Theme.of(context).textTheme.bodySmall!.apply(color: EColor.black),
         maxLines: 1,
       ),
       trailing: IconButton(
         onPressed: onPressed,
         icon: const Icon(
           Iconsax.edit,
-          color: EColor.white,
+          color: EColor.black,
         ),
       ),
     );

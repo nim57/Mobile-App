@@ -1,14 +1,14 @@
+import 'package:echo_project_123/User_profile/screen/Reviews_screen.dart';
+import 'package:echo_project_123/User_profile/screen/your_post_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:iconsax/iconsax.dart';
+import '../../Home_sereens/screen/New_post_Screen.dart';
+import '../../Home_sereens/screen/following_screen.dart';
+import '../../Home_sereens/widgets/Tab_controller.dart';
 import '../../Utils/constants/colors.dart';
 import '../../Utils/constants/sizes.dart';
-import '../../authentication_files/data/repositories/authentication/authentication_repository.dart';
-import '../../common/widgets/appbar/appbar.dart';
-import '../widgets/Section_heading.dart';
-import '../widgets/primary_header_container.dart';
+import '../../Utils/helpers/helper_function.dart';
 import '../widgets/profile.dart';
-import '../widgets/settings_menu_tile.dart';
 import '../widgets/user_profile_title.dart';
 
 class SettingScreen extends StatelessWidget {
@@ -16,132 +16,146 @@ class SettingScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            /// -- Header
-            EPrimaryHeaderContainer(
-              child: Column(
-                children: [
-                  /// Appbar
-                  EAppBar(
-                    titlt: Text(
-                      'Account',
-                      style: Theme.of(context)
-                          .textTheme
-                          .headlineMedium!
-                          .apply(color: EColor.white),
-                    ),
-                  ),
-                  const SizedBox(
-                    height: ESizes.spaceBtwItems,
-                  ),
+    final dark = EHelperFunctions.isDarkMode(context);
+    return DefaultTabController(
+      length: 2, // Number of tabs
+      child: Scaffold(
+        body: NestedScrollView(
+          // Header
+          headerSliverBuilder: (_, innerBoxIsScrolled) {
+            return [
+              SliverAppBar(
+                automaticallyImplyLeading: false,
+                pinned: true,
+                floating: true,
+                backgroundColor: dark ? EColor.black : EColor.white,
+                expandedHeight: 240,
+                flexibleSpace: Padding(
+                  padding: const EdgeInsets.all(ESizes.defaultSpace),
+                  child: ListView(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    children: [
+                      /// User Profile Card
+                      Center(
+                        child: EUserProfileTile(
+                            onPressed: () => Get.to(
+                                  () => const ProfileScreen(),
+                                )),
+                      ),
 
-                  /// User Profile Card
-                  EUserProfileTile(
-                      onPressed: () => Get.to(
-                            () => const ProfileScreen(),
-                          )),
-                  const SizedBox(
-                    height: ESizes.spaceBtwItems,
+                      const SizedBox(
+                        height: ESizes.spaceBtwItems,
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.only(left: 40, right: 40),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            /// Followers & following count
+                            Container(
+                              width: 130,
+                              height: 55,
+                              decoration: BoxDecoration(
+                                color: Colors.blue,
+                                borderRadius:
+                                    BorderRadius.all(Radius.circular(10)),
+                              ),
+                              child: Padding(
+                                padding: const EdgeInsets.only(top: 5),
+                                child: Column(
+                                  children: [
+                                    Text(
+                                      "120",
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .headlineSmall!
+                                          .apply(
+                                              color: const Color.fromARGB(
+                                                  255, 247, 246, 246)),
+                                    ),
+                                    Text(
+                                      "Following",
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .headlineSmall!
+                                          .apply(
+                                              color: const Color.fromARGB(
+                                                  255, 255, 255, 255)),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+
+                            Container(
+                              width: 130,
+                              height: 55,
+                              decoration: BoxDecoration(
+                                color: Colors.blue,
+                                borderRadius:
+                                    BorderRadius.all(Radius.circular(10)),
+                              ),
+                              child: Padding(
+                                padding: const EdgeInsets.only(top: 5),
+                                child: Column(
+                                  children: [
+                                    Text(
+                                      "120",
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .headlineSmall!
+                                          .apply(
+                                              color: const Color.fromARGB(
+                                                  255, 247, 246, 246)),
+                                    ),
+                                    Text(
+                                      "Followers",
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .headlineSmall!
+                                          .apply(
+                                              color: const Color.fromARGB(
+                                                  255, 255, 255, 255)),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      const SizedBox(
+                        height: ESizes.spaceBtwItems * 2,
+                      ),
+
+                      const SizedBox(height: ESizes.spaceBtwItems),
+                    ],
                   ),
-                  const SizedBox(
-                    height: ESizes.spaceBtwItems,
-                  ),
-                ],
+                ),
+                // Tabs
+                bottom: const ETabBar(
+                  tabs: [
+                    Tab(
+                      child: Text('  Your Post  '),
+                    ),
+                    // SizedBox(width: ESizes.spaceBtwItems),
+                    Tab(
+                      child: Text('  Reviews  '),
+                    ),
+                  ],
+                ),
               ),
-            ),
-
-            /// --Body
-
-            Padding(
-              padding: const EdgeInsets.all(ESizes.defaultSpace),
-              child: Column(
-                children: [
-                  /// -- Account  Settings
-                  const ESectionHeading(
-                    title: 'Account Settings',
-                  ),
-                  const SizedBox(
-                    height: ESizes.spaceBtwItems,
-                  ),
-
-                  ESettingsMenuTile(
-                    icon: Iconsax.notification,
-                    title: 'Notification',
-                    subtitle: 'Set and kind of notification message ',
-                    onTap: () {},
-                  ),
-                  ESettingsMenuTile(
-                    icon: Iconsax.security_card,
-                    title: 'Account Privacy',
-                    subtitle: 'Manage data usage and connect ',
-                    onTap: () {},
-                  ),
-
-                  /// --App Settings
-                  const SizedBox(
-                    height: ESizes.spaceBtwItems,
-                  ),
-                  const ESectionHeading(
-                    title: 'App Settings',
-                  ),
-                  const SizedBox(
-                    height: ESizes.spaceBtwItems,
-                  ),
-                  ESettingsMenuTile(
-                    icon: Iconsax.document_upload,
-                    title: 'Lode Data',
-                    subtitle: 'Upload Your Data ',
-                    onTap: () {},
-                  ),
-                  ESettingsMenuTile(
-                    icon: Iconsax.location,
-                    title: 'Geolocations',
-                    subtitle: 'Set recommendation based on Location',
-                    trailing: Switch(
-                      value: true,
-                      onChanged: (value) {},
-                    ),
-                  ),
-                  ESettingsMenuTile(
-                    icon: Iconsax.security_user,
-                    title: 'Safe Mode',
-                    subtitle: 'Search result is safe all ages',
-                    trailing: Switch(
-                      value: false,
-                      onChanged: (value) {},
-                    ),
-                  ),
-                  ESettingsMenuTile(
-                    icon: Iconsax.image,
-                    title: 'Hd Image Quality',
-                    subtitle: 'Ste Image quality to be seen',
-                    trailing: Switch(
-                      value: false,
-                      onChanged: (value) {},
-                    ),
-                  ),
-
-                  /// --Logout Button
-
-                  const SizedBox(
-                    height: ESizes.spaceBtwItems,
-                  ),
-                  SizedBox(
-                    width: double.infinity,
-                    child: OutlinedButton(
-                      onPressed: () =>
-                          AuthenticationRepository.instonce.logout(),
-                      child: const Text('Logout'),
-                    ),
-                  ),
-                  const SizedBox(height: ESizes.spaceBtwItems * 2.5),
-                ],
-              ),
-            ),
-          ],
+            ];
+          },
+          // Body
+          body: const TabBarView(
+            children: [
+              YourPost_Screen(),
+              YourReviewScreen(),
+            ],
+          ),
         ),
       ),
     );

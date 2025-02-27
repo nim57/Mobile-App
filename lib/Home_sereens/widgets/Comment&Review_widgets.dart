@@ -26,7 +26,8 @@ class CommentreviewWidgets extends StatelessWidget {
                     Colors.black.withOpacity(0.2), // Shadow color with opacity
                 spreadRadius: 2, // Spread radius
                 blurRadius: 8, // Blur radius
-                offset: const Offset(0, 4), // Shadow offset (horizontal, vertical)
+                offset:
+                    const Offset(0, 4), // Shadow offset (horizontal, vertical)
               ),
             ],
             borderRadius: const BorderRadius.all(Radius.circular(10)),
@@ -36,6 +37,14 @@ class CommentreviewWidgets extends StatelessWidget {
           child: const Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              Text(
+                "Item/Bank/BOC Bank",
+                style: TextStyle(
+                  color: Colors.grey,
+                  fontSize: 15,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
               Row(
                 children: [
                   Text(
