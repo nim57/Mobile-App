@@ -4,7 +4,6 @@ import 'package:echo_project_123/authentication_files/featuers/authentication/sc
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:iconsax/iconsax.dart';
-import '../../../../../../Utils/constants/colors.dart';
 import '../../../../../../Utils/constants/sizes.dart';
 import '../../../../../../Utils/constants/text_strings.dart';
 

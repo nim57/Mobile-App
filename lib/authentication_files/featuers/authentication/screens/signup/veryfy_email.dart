@@ -3,13 +3,10 @@ import 'package:echo_project_123/authentication_files/featuers/authentication/co
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:get/get_connect/http/src/request/request.dart';
 import '../../../../../Utils/constants/image_Strings.dart';
 import '../../../../../Utils/constants/sizes.dart';
 import '../../../../../Utils/constants/text_strings.dart';
 import '../../../../../Utils/helpers/helper_function.dart';
-import '../../../../common/widgets/success_screen/sussess_screen.dart';
-import '../login/login.dart';
 
 class VerifyEmailScreen extends StatelessWidget {
   const VerifyEmailScreen({

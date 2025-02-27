@@ -4,7 +4,6 @@ import 'package:echo_project_123/Utils/constants/text_strings.dart';
 import 'package:echo_project_123/authentication_files/common/widgets/loaders/lodaders.dart';
 import 'package:echo_project_123/authentication_files/common/widgets/success_screen/sussess_screen.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_core/firebase_core.dart';
 import 'package:get/get.dart';
 
 import '../../../../../Utils/constants/image_Strings.dart';

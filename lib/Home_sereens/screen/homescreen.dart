@@ -17,7 +17,7 @@ class HomeScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final dark = EHelperFunctions.isDarkMode(context);
     return DefaultTabController(
-      length: 2,  // Number of tabs
+      length: 2, // Number of tabs
       child: Scaffold(
         // Appbar
         appBar: HomeAppBar(
@@ -61,7 +61,7 @@ class HomeScreen extends StatelessWidget {
                     Tab(
                       child: Text('  Following  '),
                     ),
-                   // SizedBox(width: ESizes.spaceBtwItems),
+                    // SizedBox(width: ESizes.spaceBtwItems),
                     Tab(
                       child: Text('  New Post  '),
                     ),

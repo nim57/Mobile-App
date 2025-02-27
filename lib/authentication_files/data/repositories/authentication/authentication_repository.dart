@@ -1,6 +1,5 @@
-import 'dart:io';
-
 import 'package:echo_project_123/Home_sereens/widgets/Navigation_menu/navigation_menu.dart';
+import 'package:echo_project_123/authentication_files/data/repositories/user/user_repository.dart';
 import 'package:echo_project_123/authentication_files/featuers/authentication/screens/login/login.dart';
 import 'package:echo_project_123/authentication_files/featuers/authentication/screens/onboarding/onboarding.dart';
 import 'package:echo_project_123/authentication_files/featuers/authentication/screens/signup/veryfy_email.dart';
@@ -21,6 +20,9 @@ class AuthenticationRepository extends GetxController {
 // Variables
   final deviceStorage = GetStorage();
   final _auth = FirebaseAuth.instance;
+
+  /// Get Authenticated USer Data
+  User? get authUser => _auth.currentUser;
 
   /// Called from main.dart on app lounch
   @override
@@ -96,6 +98,26 @@ class AuthenticationRepository extends GetxController {
   }
 
   /// [ReAuthenticate] - ReAuthenticote User
+  Future<void> reAuthenticationWithEmailAndPassword(
+      String email, String password) async {
+    try {
+      // Create a credintial
+      AuthCredential credential =
+          EmailAuthProvider.credential(email: email, password: password);
+      // ReAuthenticate
+      await _auth.currentUser!.reauthenticateWithCredential(credential);
+    } on FirebaseAuthException catch (e) {
+      throw FirebaseAuthException(code: e.code, message: e.message);
+    } on FirebaseException catch (e) {
+      throw FirebaseAuthException(code: e.code, message: e.message);
+    } on FormatException catch (_) {
+      throw FormatException('Invalid format');
+    } on PlatformException catch (e) {
+      throw PlatformException(code: e.code, message: e.message);
+    } catch (e) {
+      throw 'Something went wrong. Please try again later.';
+    }
+  }
 
   /// [EmailVerification] - MAIL VERIFICATION
   Future<void> sendEmailVerification() async {
@@ -191,4 +213,20 @@ class AuthenticationRepository extends GetxController {
   }
 
   /// DELETE USER - Remove user Auth and Firestore Account.
+  Future<void> deleteAccount() async {
+    try {
+      await UserRepository.instance.removeUserRecord(_auth.currentUser!.uid);
+      await _auth.currentUser?.delete();
+    } on FirebaseAuthException catch (e) {
+      throw FirebaseAuthException(code: e.code, message: e.message);
+    } on FirebaseException catch (e) {
+      throw FirebaseAuthException(code: e.code, message: e.message);
+    } on FormatException catch (_) {
+      throw FormatException('Invalid format');
+    } on PlatformException catch (e) {
+      throw PlatformException(code: e.code, message: e.message);
+    } catch (e) {
+      throw 'Something went wrong. Please try again later.';
+    }
+  }
 }

@@ -2,7 +2,6 @@ import 'package:echo_project_123/Utils/constants/sizes.dart';
 import 'package:echo_project_123/Utils/constants/text_strings.dart';
 import 'package:echo_project_123/Utils/validators/validation.dart';
 import 'package:echo_project_123/authentication_files/featuers/authentication/controllers/forget_password/forget_password_conteoller.dart';
-import 'package:echo_project_123/authentication_files/featuers/authentication/controllers/forget_password/reset_passwprd.dart';
 import 'package:echo_project_123/common/widgets/appbar/appbar.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';

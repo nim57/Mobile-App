@@ -6,7 +6,6 @@ import 'package:echo_project_123/authentication_files/data/repositories/user/use
 import 'package:echo_project_123/authentication_files/data/repositories/user/user_repository.dart';
 import 'package:echo_project_123/authentication_files/featuers/authentication/controllers/signup/network_manager.dart';
 import 'package:echo_project_123/authentication_files/featuers/authentication/screens/signup/veryfy_email.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 

@@ -12,8 +12,10 @@ class ETexts {
 
   static const String onBoardingSubTitle1 =
       "Welcome to Echo Review mobile app see reviews and get an idea for about";
-  static const String onBoardingSubTitle2 = "Share your bad or good experience with other members " ;
-  static const String onBoardingSubTitle3 = "Refer the all reviews and get an idea and do good Deal";
+  static const String onBoardingSubTitle2 =
+      "Share your bad or good experience with other members ";
+  static const String onBoardingSubTitle3 =
+      "Refer the all reviews and get an idea and do good Deal";
 
   static const String submit = "Submit";
   static const String Bcontinue = "Continue";
@@ -39,19 +41,19 @@ class ETexts {
   static const String verificationCode = "Verification Code";
   static const String resendCode = "Resend Code";
   static const String resendEmail = "Resend Email";
-  static const String  and = " And " ;
+  static const String and = " And ";
   static const String done = "Done";
   static const String homeAppTitle = "Good Day for Learning ";
-  static const String homeAppSubTitle= "Nimesh Sandaruwan";
-  static const String Name = "Item Name" ;
+  static const String homeAppSubTitle = "Nimesh Sandaruwan";
+  static const String Name = "Item Name";
   static const String Item_title = "Item Title";
   static const String Featured = "Featured Image :";
   static const String Featured1 = "Featured Image";
-  static const String Post_description = "Post description" ;
-  static const String Website ="Website URL";
-  static const String Email_Address= "Email Address";
-  static const String Tags = "Tags" ;
-  static const String save_button = "Save Item" ;
+  static const String Post_description = "Post description";
+  static const String Website = "Website URL";
+  static const String Email_Address = "Email Address";
+  static const String Tags = "Tags";
+  static const String save_button = "Save Item";
   static const String clear = "Clear";
   static const String back = "Back to Home";
 
@@ -72,7 +74,9 @@ class ETexts {
       "Congratulations! Your account is verified. Explore and experience a world of unlimited deals and personalized offers.";
   static const String emailNotReceivedMessage =
       "Didn't get the email? Check your spam or resend it.";
-  static const String accountCreatedTitle = "Your Account Successfully Created!";
-  static const String yourAccountCreatedSubTitle = "Welcome to Self Learning Platform: Your Account is Created, Unleash the Joy of Seamless Self--Learning";
+  static const String accountCreatedTitle =
+      "Your Account Successfully Created!";
+  static const String yourAccountCreatedSubTitle =
+      "Welcome to Self Learning Platform: Your Account is Created, Unleash the Joy of Seamless Self--Learning";
 // Fix all errors and rewrite
 }

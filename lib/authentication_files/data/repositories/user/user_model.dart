@@ -71,13 +71,13 @@ class UserModel {
     if (document.data() != null) {
       final data = document.data()!;
       return UserModel(
-        id: data['id'],
-        firstName: data['firstName'],
-        lastName: data['lastName'],
-        username: data['username'],
-        email: data['email'],
-        phoneNumber: data['phoneNumber'],
-        profilePicture: data['profilePicture'],
+        id: data['id'] ?? '',
+        firstName: data['firstName'] ?? '',
+        lastName: data['lastName'] ?? '',
+        username: data['username'] ?? '',
+        email: data['email'] ?? '',
+        phoneNumber: data['phoneNumber'] ?? '',
+        profilePicture: data['profilePicture'] ?? '',
       );
     } else {
       throw Exception("Document data is null");

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 class PrivacyPolicyPage extends StatelessWidget {
-  PrivacyPolicyPage({Key? key}) : super(key: key);
+  PrivacyPolicyPage({super.key});
 
   final List<PolicySection> sections = [
     /// introduction
@@ -248,9 +248,9 @@ class PolicySectionWidget extends StatefulWidget {
   final PolicySection section;
 
   const PolicySectionWidget({
-    Key? key,
+    super.key,
     required this.section,
-  }) : super(key: key);
+  });
 
   @override
   State<PolicySectionWidget> createState() => _PolicySectionWidgetState();
