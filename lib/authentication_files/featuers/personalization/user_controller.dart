@@ -5,6 +5,7 @@ import 'package:echo_project_123/authentication_files/data/repositories/user/use
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:image_picker/image_picker.dart';
 
 import '../../../User_profile/widgets/re_authenticate_user_lodin_form.dart';
 import '../../../Utils/constants/image_Strings.dart';
@@ -18,7 +19,9 @@ class UserController extends GetxController {
 
   final profileLoading = false.obs;
   Rx<UserModel> user = UserModel.empty().obs;
+
   final hidePassword = false.obs;
+  final imageUploading = false.obs;
   final VerifyEmail = TextEditingController();
   final VerifyPassword = TextEditingController();
   final userRepository = Get.put(UserRepository());
@@ -49,27 +52,33 @@ class UserController extends GetxController {
   /// Save user Record from any Registration provider
   Future<void> saveUserRecord(UserCredential? userCredential) async {
     try {
-      if (userCredential != null) {
-        // Conver Name to First and LAst name
-        final nameParts =
-            UserModel.nameParts(userCredential.user!.displayName ?? '');
-        final username =
-            UserModel.generateUsername(userCredential.user!.displayName ?? '');
+      // First Upload Rx User and then check if user data is already stored. if not store new data
+      await fetchUserRecord();
 
-        // Map data
+      if (user.value.id.isEmpty) {
+        if (userCredential != null) {
+          // Conver Name to First and LAst name
+          final nameParts =
+              UserModel.nameParts(userCredential.user!.displayName ?? '');
+          final username = UserModel.generateUsername(
+              userCredential.user!.displayName ?? '');
 
-        final user = UserModel(
-          id: userCredential.user!.uid,
-          firstName: nameParts[0],
-          lastName: nameParts.length > 1 ? nameParts.sublist(1).join(' ') : '',
-          username: username,
-          email: userCredential.user!.email ?? '',
-          phoneNumber: userCredential.user!.phoneNumber ?? '',
-          profilePicture: userCredential.user!.photoURL ?? '',
-        );
+          // Map data
 
-        // Save User Record
-        await userRepository.saveUserRecord(user);
+          final user = UserModel(
+            id: userCredential.user!.uid,
+            firstName: nameParts[0],
+            lastName:
+                nameParts.length > 1 ? nameParts.sublist(1).join(' ') : '',
+            username: username,
+            email: userCredential.user!.email ?? '',
+            phoneNumber: userCredential.user!.phoneNumber ?? '',
+            profilePicture: userCredential.user!.photoURL ?? '',
+          );
+
+          // Save User Record
+          await userRepository.saveUserRecord(user);
+        }
       }
     } catch (e) {
       ELoaders.warningSnackBar(
@@ -152,6 +161,38 @@ class UserController extends GetxController {
     } catch (e) {
       EFullScreenLoader.stopLoading();
       ELoaders.warningSnackBar(title: 'On Sanp!', message: e.toString());
+    }
+  }
+
+  /// Uplpod Profile Image
+  uploadUserProfilePicture() async {
+    try {
+      final image = await ImagePicker().pickImage(
+          source: ImageSource.gallery,
+          imageQuality: 70,
+          maxHeight: 512,
+          maxWidth: 512);
+      if (image != null) {
+        imageUploading.value = true;
+        // Upload Image
+        final imageUrl =
+            await userRepository.uploadImage('Users/Images/Profile/', image);
+
+        // Update user Image Record
+        Map<String, dynamic> json = {'profilePicture': imageUrl};
+        await userRepository.updateSingleField(json);
+
+        user.value.profilePicture = imageUrl;
+        user.refresh();
+        ELoaders.successSnackBor(
+            title: 'Congratulation',
+            message: 'Your Profile image has beed Update!');
+      }
+    } catch (e) {
+      ELoaders.errorsnackBar(
+          title: "OhSnap", message: 'something went worng: $e');
+    } finally {
+      imageUploading.value = false;
     }
   }
 }

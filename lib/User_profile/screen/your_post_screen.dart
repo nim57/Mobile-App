@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:iconsax/iconsax.dart';
-import '../../Home_sereens/screen/following_screen.dart';
 import '../../Home_sereens/widgets/following_page/Views_count.dart';
 import '../../Home_sereens/widgets/following_page/comment_box.dart';
 import '../../Home_sereens/widgets/following_page/post_assets.dart';

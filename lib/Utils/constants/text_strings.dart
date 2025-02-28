@@ -48,6 +48,7 @@ class ETexts {
   static const String Name = "Item Name";
   static const String Item_title = "Item Title";
   static const String Featured = "Featured Image :";
+
   static const String Featured1 = "Featured Image";
   static const String Post_description = "Post description";
   static const String Website = "Website URL";

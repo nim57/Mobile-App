@@ -2,8 +2,6 @@ import 'package:echo_project_123/User_profile/screen/Reviews_screen.dart';
 import 'package:echo_project_123/User_profile/screen/your_post_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '../../Home_sereens/screen/New_post_Screen.dart';
-import '../../Home_sereens/screen/following_screen.dart';
 import '../../Home_sereens/widgets/Tab_controller.dart';
 import '../../Utils/constants/colors.dart';
 import '../../Utils/constants/sizes.dart';

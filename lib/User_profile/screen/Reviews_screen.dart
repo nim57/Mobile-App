@@ -3,7 +3,6 @@ import 'package:get/get.dart';
 import 'package:iconsax/iconsax.dart';
 import 'package:image_picker/image_picker.dart'; // For image picking
 import 'package:flutter_emoji/flutter_emoji.dart'; // For emoji support
-import '../../Home_sereens/screen/New_replyORCommentScreen.dart';
 import '../../Home_sereens/widgets/Comment&Review_widgets.dart';
 import '../../Home_sereens/widgets/following_page/emoji_box.dart';
 import '../../Home_sereens/widgets/following_page/profile_pic.dart';

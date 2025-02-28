@@ -1,3 +1,4 @@
+import 'package:echo_project_123/Home_sereens/widgets/shimmer.dart';
 import 'package:echo_project_123/User_profile/widgets/change_name.dart';
 import 'package:echo_project_123/User_profile/widgets/profile_menu.dart';
 import 'package:flutter/material.dart';
@@ -38,13 +39,26 @@ class ProfileScreen extends StatelessWidget {
                 width: double.infinity,
                 child: Column(
                   children: [
-                    const ECircularImage(
-                      image: EImages.user1,
-                      width: 80,
-                      height: 80,
-                    ),
+                    Obx(() {
+                      final neteorkImage = controller.user.value.profilePicture;
+                      final image = neteorkImage.isNotEmpty
+                          ? neteorkImage
+                          : EImages.user1;
+                      return controller.imageUploading.value
+                          ? const EShimmerEffect(
+                              width: 80,
+                              height: 80,
+                              radius: 80,
+                            )
+                          : ECircularImage(
+                              image: image,
+                              width: 80,
+                              height: 80,
+                              isNetworkingImage: neteorkImage.isNotEmpty,
+                            );
+                    }),
                     TextButton(
-                      onPressed: () {},
+                      onPressed: () => controller.uploadUserProfilePicture(),
                       child: const Text("Change Profile Picture"),
                     ),
                   ],
