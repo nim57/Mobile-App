@@ -65,7 +65,7 @@ class UserModel {
     };
   }
 
-  /// Conver model to create a UserModel form a Firebase document snapshot.
+   
   factory UserModel.fromSnapshot(
       DocumentSnapshot<Map<String, dynamic>> document) {
     if (document.data() != null) {
