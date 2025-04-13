@@ -14,7 +14,7 @@ class Item_Screen extends StatelessWidget {
     // Get passed category ID
     final String categoryId = Get.arguments as String;
     final ItemController controller = Get.put(ItemController());
-    
+
     // Fetch items when screen loads
     WidgetsBinding.instance.addPostFrameCallback((_) {
       controller.fetchItemsByCategory(categoryId);
@@ -69,7 +69,8 @@ class Item_Screen extends StatelessWidget {
               final item = controller.items[index];
               return Item_tile2(
                 item: item,
-                action: () => Get.to(() => const ItemDetailScreen(), arguments: item.id),
+                action: () =>
+                    Get.to(() => const ItemDetailScreen(), arguments: item.id),
               );
             },
           ),

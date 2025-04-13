@@ -9,16 +9,20 @@ import 'Comment_screen.dart';
 import 'RivewScreen.dart';
 
 class New_replyROComment extends StatelessWidget {
-  const New_replyROComment({super.key});
+  const New_replyROComment(
+      {super.key, required this.categoryId, required this.itemId});
+
+  final String categoryId;
+  final String itemId;
 
   @override
   Widget build(BuildContext context) {
     final dark = EHelperFunctions.isDarkMode(context);
     return DefaultTabController(
-      length: 2,  // Number of tabs
+      length: 2, // Number of tabs
       child: Scaffold(
         // Appbar
-        appBar:const EAppBar(
+        appBar: const EAppBar(
           titlt: Text("Review Ro Comment"),
           showBackArrow: true,
         ),
@@ -59,10 +63,12 @@ class New_replyROComment extends StatelessWidget {
             ];
           },
           // Body
-          body: const TabBarView(
+          body: TabBarView(
             children: [
-              ReviewScreen(),
-              CommentScreen()
+              ReviewScreen(categoryId: categoryId, itemId: itemId),
+              CommentScreen(
+                itemId: itemId,
+              )
             ],
           ),
         ),

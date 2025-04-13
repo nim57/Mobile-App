@@ -1,21 +1,55 @@
+// screens/comment_screen.dart
 import 'package:echo_project_123/Home_sereens/screen/pending_message.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:iconsax/iconsax.dart';
+import '../../authentication_files/featuers/personalization/user_controller.dart';
 import '../../User_profile/widgets/settings_menu_tile.dart';
 import '../../Utils/constants/sizes.dart';
 import '../../Utils/constants/text_strings.dart';
+import '../comment_backend/comment_controller.dart';
 
 class CommentScreen extends StatefulWidget {
-  const CommentScreen({super.key});
+  const CommentScreen({super.key, required this.itemId});
+
+  final String itemId;
 
   @override
   _CommentScreenState createState() => _CommentScreenState();
 }
 
 class _CommentScreenState extends State<CommentScreen> {
-  double customerServiceRating = 0;
-  double qualityOfServiceRating = 0;
+  final CommentController _commentController = Get.put(CommentController());
+  final UserController _userController = Get.put(UserController());
+  final TextEditingController _tagsController = TextEditingController();
+  final TextEditingController _titleController = TextEditingController();
+  final TextEditingController _commentTextController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+  }
+
+  void _clearForm() {
+    _tagsController.clear();
+    _titleController.clear();
+    _commentTextController.clear();
+    _commentController.isVisible.value = true;
+  }
+
+  void _submitComment() {
+    _commentController.submitComment(
+      itemId: widget.itemId,
+      tags: _tagsController.text.split(',').map((e) => e.trim()).toList(),
+      title: _titleController.text,
+      text: _commentTextController.text,
+      userId: _userController.user.value.id,
+      username: _userController.user.value.username,
+      userProfile: _userController.user.value.profilePicture,
+    );
+    _clearForm();
+    Get.to(() => const PendingMessage());
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -28,7 +62,7 @@ class _CommentScreenState extends State<CommentScreen> {
             children: [
               /// Tags
               TextFormField(
-                expands: false,
+                controller: _tagsController,
                 decoration: const InputDecoration(
                   labelText: ETexts.Tags,
                   prefixIcon: Icon(Icons.tag_sharp),
@@ -38,7 +72,7 @@ class _CommentScreenState extends State<CommentScreen> {
 
               /// Item title
               TextFormField(
-                expands: false,
+                controller: _titleController,
                 decoration: const InputDecoration(
                   labelText: ETexts.Item_title,
                   prefixIcon: Icon(Iconsax.user),
@@ -46,40 +80,46 @@ class _CommentScreenState extends State<CommentScreen> {
               ),
               const SizedBox(height: ESizes.spaceBtwInputFields),
 
-              /// Comment
-              TextFormField(
-                maxLines: null,
-                keyboardType: TextInputType.multiline,
-                decoration: const InputDecoration(
-                  hintText: 'Comment',
-                  border: OutlineInputBorder(),
-                  contentPadding: EdgeInsets.symmetric(vertical: 20, horizontal: 10),
-                ),
-              ),
-              const SizedBox(height: ESizes.spaceBtwInputFields),
-
-              /// Clear button
-              Padding(
-                padding: const EdgeInsets.only(left: 310),
-                child: TextButton(
-                  onPressed: () {},
-                  child: const Text(
-                    ETexts.clear,
-                    style: TextStyle(fontSize: 17),
+              /// Comment (Multi-line with scroll)
+              SizedBox(
+                height: 150, // Fixed height for 4 lines
+                child: TextFormField(
+                  controller: _commentTextController,
+                  maxLines: 4,
+                  keyboardType: TextInputType.multiline,
+                  decoration: const InputDecoration(
+                    hintText: 'Comment',
+                    border: OutlineInputBorder(),
+                    contentPadding:
+                        EdgeInsets.symmetric(vertical: 20, horizontal: 10),
                   ),
                 ),
               ),
               const SizedBox(height: ESizes.spaceBtwInputFields),
-              ESettingsMenuTile(icon: Iconsax.eye, title:'Visble or Not', subtitle: 'Your profile information see others users', trailing: Switch(value: true,onChanged: (value){},),),
-              const SizedBox(height: ESizes.spaceBtwInputFields*2),
+
+              /// Visibility Switch with Obx
+              Obx(
+                () => ESettingsMenuTile(
+                  icon: Iconsax.eye,
+                  title: 'Visibility',
+                  subtitle: 'Make comment visible to others',
+                  trailing: Switch(
+                    value: _commentController.isVisible.value,
+                    onChanged: (value) =>
+                        _commentController.toggleVisibility(value),
+                  ),
+                ),
+              ),
+              const SizedBox(height: ESizes.spaceBtwInputFields * 2),
 
               /// Save button
               Align(
                 alignment: Alignment.bottomCenter,
                 child: GestureDetector(
-                  onTap: () => Get.to(() => const PendingMessage()),
+                  onTap: _submitComment,
                   child: Container(
-                    padding: const EdgeInsets.only(left: 15, right: 15, top: 8, bottom: 8),
+                    padding: const EdgeInsets.only(
+                        left: 15, right: 15, top: 8, bottom: 8),
                     decoration: const BoxDecoration(
                       shape: BoxShape.rectangle,
                       borderRadius: BorderRadius.all(Radius.circular(9)),
@@ -99,4 +139,3 @@ class _CommentScreenState extends State<CommentScreen> {
     );
   }
 }
-

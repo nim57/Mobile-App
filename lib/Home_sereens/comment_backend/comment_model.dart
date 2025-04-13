@@ -1,0 +1,58 @@
+// models/comment_model.dart
+import 'package:cloud_firestore/cloud_firestore.dart';
+
+class CommentModel {
+  final String commentId;
+  final String userId;
+  final String itemId;
+  final String text;
+  final bool isVisible;
+  final String username;
+  final String userProfile;
+  final List<String> tags;
+  final String title;
+  final Timestamp timestamp;
+
+  CommentModel({
+    required this.commentId,
+    required this.userId,
+    required this.itemId,
+    required this.text,
+    required this.isVisible,
+    required this.username,
+    required this.userProfile,
+    required this.tags,
+    required this.title,
+    required this.timestamp,
+  });
+
+  Map<String, dynamic> toMap() {
+    return {
+      'commentId': commentId,
+      'userId': userId,
+      'itemId': itemId,
+      'text': text,
+      'isVisible': isVisible,
+      'username': username,
+      'userProfile': userProfile,
+      'tags': tags,
+      'title': title,
+      'timestamp': timestamp,
+    };
+  }
+
+  factory CommentModel.fromMap(Map<String, dynamic> map) {
+    return CommentModel(
+      commentId: map['commentId'] ?? '',
+      userId: map['userId'] ?? '',
+      itemId: map['itemId'] ?? '',
+      text: map['text'] ?? '',
+      isVisible: map['isVisible'] ?? true,
+      username: map['username'] ?? 'Anonymous',
+      userProfile: map['userProfile'] ?? '',
+      tags: List<String>.from(map['tags'] ?? []),
+      title: map['title'] ?? '',
+      timestamp: (map['timestamp'] as Timestamp?) ?? Timestamp.now(),
+    );
+  }
+}

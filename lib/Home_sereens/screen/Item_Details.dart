@@ -77,7 +77,7 @@ class ItemDetailScreen extends StatelessWidget {
                     const SizedBox(height: 32),
 
                     // View Comments Button
-                    _buildCommentsButton(),
+                    _buildCommentsButton(item),
                   ],
                 ),
               ),
@@ -223,11 +223,15 @@ class ItemDetailScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildCommentsButton() {
+  Widget _buildCommentsButton(Item item) {
     return Align(
       alignment: Alignment.bottomCenter,
       child: ElevatedButton(
-        onPressed: () => Get.to(() => const CommentReviewScreen()),
+        onPressed: () => Get.to(() => CommentReviewScreen(
+          itemId: item.id, 
+          categoryId: item.categoryId
+          
+        )),
         style: ElevatedButton.styleFrom(
           padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
         ),

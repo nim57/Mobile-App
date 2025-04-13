@@ -16,6 +16,13 @@ Future<void> main() async {
   // Todo: init local Storage
   await GetStorage.init();
 
+  // Add global error handler
+  FlutterError.onError = (details) {
+    if (details.exception.toString().contains('cloud_firestore')) {
+      // Handle Firestore errors globally
+    }
+  };
+
   // -- Awate Splash unitl others items Load
   FlutterNativeSplash.preserve(widgetsBinding: widgetsBinding);
 
