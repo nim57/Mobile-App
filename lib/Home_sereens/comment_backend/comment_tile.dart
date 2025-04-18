@@ -1,15 +1,36 @@
 // comment_tile.dart
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import '../screen/Comment&ReviewScreen.dart';
 import 'comment_controller.dart';
 import 'comment_model.dart';
+import '../reply_backend/reply_controller.dart';
+import '../reply_backend/reply_model.dart';
+import '../reply_backend/reply_repository.dart';
 
 class CommentTile extends StatelessWidget {
   final CommentModel comment;
+  final VoidCallback onReply;
 
-  const CommentTile({super.key, required this.comment});
+  const CommentTile({
+    super.key, 
+    required this.comment,
+    required this.onReply,
+  });
+
+  ImageProvider getProfileImage() {
+    if (comment.isVisible) {
+      return comment.userProfile.isNotEmpty
+          ? NetworkImage(comment.userProfile)
+          : const AssetImage('Assets/App_Assets/authentication_assets/user1.png');
+    }
+    return const AssetImage('Assets/App_Assets/authentication_assets/auth2.png');
+  }
 
   @override
   Widget build(BuildContext context) {
+    final replyController = Get.find<ReplyController>();
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -21,49 +42,119 @@ class CommentTile extends StatelessWidget {
         const SizedBox(height: 12),
         _tags(),
         _actionButtons(),
+        _buildRepliesSection(replyController),
       ],
     );
   }
 
- Widget _userHeader(BuildContext context) => Row(
-  children: [
-    CircleAvatar(
-      backgroundImage: comment.userProfile.isNotEmpty
-          ? NetworkImage(comment.userProfile)
-          : const AssetImage('Assets/App_Assets/authentication_assets/user1.png') as ImageProvider,
-    ),
-    const SizedBox(width: 12),
-    Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(comment.username),
-        Text(
-          CommentController.instance.getTimeAgo(comment.timestamp),
-          style: Theme.of(context).textTheme.bodySmall,
-        ),
-      ],
-    ),
-  ],
-);
-
-  Widget _tags() => Wrap(
-        spacing: 8,
-        children: comment.tags
-            .map((tag) => Chip(
-                  label: Text('#$tag'),
-                  materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                ))
-            .toList(),
-      );
-
-  Widget _actionButtons() => Row(
+  Widget _userHeader(BuildContext context) => Row(
+    children: [
+      CircleAvatar(backgroundImage: getProfileImage()),
+      const SizedBox(width: 12),
+      Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          IconButton(icon: const Icon(Icons.thumb_up), onPressed: () {}),
-          IconButton(icon: const Icon(Icons.thumb_down), onPressed: () {}),
-          TextButton(
-            onPressed: () {},
-            child: const Text("Reply"),
+          Text(
+            comment.isVisible ? comment.username : 'Anonymous',
+            style: Theme.of(context).textTheme.titleMedium,
+          ),
+          Text(
+            CommentController.instance.getTimeAgo(comment.timestamp),
+            style: Theme.of(context).textTheme.bodySmall,
           ),
         ],
-      );
+      ),
+    ],
+  );
+
+  Widget _tags() => Wrap(
+    spacing: 8,
+    children: comment.tags
+        .map((tag) => Chip(
+              label: Text('#$tag'),
+              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            ))
+        .toList(),
+  );
+
+  Widget _actionButtons() => Row(
+    children: [
+      IconButton(icon: const Icon(Icons.thumb_up), onPressed: () {}),
+      const Text('0'),
+      const SizedBox(width: 16),
+      IconButton(icon: const Icon(Icons.thumb_down), onPressed: () {}),
+      const Text('0'),
+      const Spacer(),
+      TextButton(onPressed: onReply, child: const Text("Reply")),
+    ],
+  );
+
+  Widget _buildRepliesSection(ReplyController controller) {
+    return StreamBuilder<List<ReplyModel>>(
+      stream: ReplyRepository().getReplies(comment.commentId),
+      builder: (context, snapshot) {
+        if (snapshot.hasError) {
+          return Padding(
+            padding: const EdgeInsets.only(top: 8.0),
+            child: Text('Error: ${snapshot.error}'),
+          );
+        }
+
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Padding(
+            padding: EdgeInsets.only(top: 8.0),
+            child: CircularProgressIndicator(strokeWidth: 2),
+          );
+        }
+
+        final replies = snapshot.data!;
+        if (replies.isEmpty) return const SizedBox.shrink();
+
+        final isExpanded = controller.expandedReplies[comment.commentId] ?? false;
+        final visibleReplies = isExpanded ? replies : replies.take(1).toList();
+
+        return Padding(
+          padding: const EdgeInsets.only(left: 16.0, top: 8.0),
+          child: Column(
+            children: [
+              ...visibleReplies.map((reply) => ReplyTile(
+                    reply: reply,
+                    isLast: reply == visibleReplies.last,
+                  )),
+              if (replies.length > 1 && !isExpanded)
+                _ViewMoreButton(
+                  count: replies.length - 1,
+                  onTap: () => controller.toggleExpansion(comment.commentId),
+                ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _ViewMoreButton extends StatelessWidget {
+  final int count;
+  final VoidCallback onTap;
+
+  const _ViewMoreButton({required this.count, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return TextButton(
+      onPressed: onTap,
+      style: TextButton.styleFrom(
+        padding: EdgeInsets.zero,
+        visualDensity: VisualDensity.compact,
+      ),
+      child: Text(
+        'View $count more replies',
+        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              color: Colors.blue,
+              decoration: TextDecoration.underline,
+            ),
+      ),
+    );
+  }
 }

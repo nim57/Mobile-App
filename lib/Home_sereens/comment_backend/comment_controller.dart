@@ -4,7 +4,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:url_launcher/url_launcher.dart';
 import 'comment_model.dart';
 import 'comment_repotory.dart';
 
@@ -33,7 +32,7 @@ class CommentController extends GetxController {
         userId: userId,
         itemId: itemId,
         text: text,
-        isVisible: true,
+        isVisible: isVisible.value,
         username: username,
         userProfile: userProfile,
         tags: tags,
@@ -69,34 +68,35 @@ class CommentController extends GetxController {
     );
   }
 
- void _showIndexErrorDialog(String error) {
-  Get.dialog(
-    AlertDialog(
-      title: const Text('Index Required'),
-      content: Column(
-        children: [
-          const Text('The app needs a database index to load comments.'),
-          const SizedBox(height: 10),
-          SelectableText(
-            error.split('link: ')[1],
-            style: const TextStyle(color: Colors.blue),
+  void _showIndexErrorDialog(String error) {
+    Get.dialog(
+      AlertDialog(
+        title: const Text('Index Required'),
+        content: Column(
+          children: [
+            const Text('The app needs a database index to load comments.'),
+            const SizedBox(height: 10),
+            SelectableText(
+              error.split('link: ')[1],
+              style: const TextStyle(color: Colors.blue),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            child: const Text('Continue'),
+            onPressed: () {
+              Get.back();
+              // Optional: Retry after delay
+              Future.delayed(
+                  const Duration(minutes: 3), () => fetchComments(error));
+            },
           ),
         ],
       ),
-      actions: [
-        TextButton(
-          child: const Text('Continue'),
-          onPressed: () {
-            Get.back();
-            // Optional: Retry after delay
-            Future.delayed(const Duration(minutes: 3), () => fetchComments(error));
-          },
-        ),
-      ],
-    ),
-    barrierDismissible: true, // Allows tapping outside
-  );
-}
+      barrierDismissible: true, // Allows tapping outside
+    );
+  }
 
   String getTimeAgo(Timestamp timestamp) {
     final now = DateTime.now();
@@ -115,9 +115,5 @@ class CommentController extends GetxController {
   void onClose() {
     _commentsSubscription?.cancel();
     super.onClose();
-  }
-
-  void toggleVisibility(bool value) {
-    isVisible.value = value;
   }
 }

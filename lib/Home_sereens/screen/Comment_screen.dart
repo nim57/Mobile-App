@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:iconsax/iconsax.dart';
 import '../../authentication_files/featuers/personalization/user_controller.dart';
-import '../../User_profile/widgets/settings_menu_tile.dart';
 import '../../Utils/constants/sizes.dart';
 import '../../Utils/constants/text_strings.dart';
 import '../comment_backend/comment_controller.dart';
@@ -99,17 +98,14 @@ class _CommentScreenState extends State<CommentScreen> {
 
               /// Visibility Switch with Obx
               Obx(
-                () => ESettingsMenuTile(
-                  icon: Iconsax.eye,
-                  title: 'Visibility',
-                  subtitle: 'Make comment visible to others',
-                  trailing: Switch(
-                    value: _commentController.isVisible.value,
-                    onChanged: (value) =>
-                        _commentController.toggleVisibility(value),
-                  ),
+                () => SwitchListTile(
+                  title: const Text('Visible to Public'),
+                  value: _commentController.isVisible.value,
+                  onChanged: (value) =>
+                      _commentController.isVisible.value = value,
                 ),
               ),
+
               const SizedBox(height: ESizes.spaceBtwInputFields * 2),
 
               /// Save button

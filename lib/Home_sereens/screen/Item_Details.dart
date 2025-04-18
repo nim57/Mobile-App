@@ -227,11 +227,8 @@ class ItemDetailScreen extends StatelessWidget {
     return Align(
       alignment: Alignment.bottomCenter,
       child: ElevatedButton(
-        onPressed: () => Get.to(() => CommentReviewScreen(
-          itemId: item.id, 
-          categoryId: item.categoryId
-          
-        )),
+        onPressed: () => Get.to(() =>
+            CommentReviewScreen(itemId: item.id, categoryId: item.categoryId)),
         style: ElevatedButton.styleFrom(
           padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
         ),

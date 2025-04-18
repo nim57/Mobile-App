@@ -1,17 +1,21 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:iconsax/iconsax.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:flutter_emoji/flutter_emoji.dart';
-import '../../Utils/constants/image_strings.dart';
+import '../../authentication_files/featuers/personalization/user_controller.dart';
 import '../../common/widgets/appbar/appbar.dart';
 import '../comment_backend/comment_controller.dart';
 import '../comment_backend/comment_model.dart';
-import '../comment_backend/comment_tile.dart';
+import '../reply_backend/edit_Screen.dart';
+import '../reply_backend/reply_controller.dart';
+import '../reply_backend/reply_model.dart';
+import '../reply_backend/reply_repository.dart';
+import '../reply_backend/reply_screen.dart';
 import '../review_backend/review_controler.dart';
 import '../review_backend/review_model.dart';
 import '../widgets/following_page/emoji_box.dart';
-import '../widgets/following_page/profile_pic.dart';
 import 'New_replyORCommentScreen.dart';
 
 class CommentReviewScreen extends StatefulWidget {
@@ -31,6 +35,7 @@ class CommentReviewScreen extends StatefulWidget {
 class _CommentReviewScreenState extends State<CommentReviewScreen> {
   final ReviewController reviewController = Get.put(ReviewController());
   final CommentController commentController = Get.put(CommentController());
+  final ReplyController replyController = Get.put(ReplyController());
   final _replyController = TextEditingController();
   final _emojiParser = EmojiParser();
   bool _showReplyBox = false;
@@ -63,6 +68,10 @@ class _CommentReviewScreenState extends State<CommentReviewScreen> {
   @override
   void initState() {
     super.initState();
+    _initializeData();
+  }
+
+  void _initializeData() {
     reviewController.fetchReviews(widget.itemId, widget.categoryId);
     commentController.fetchComments(widget.itemId);
   }
@@ -97,7 +106,6 @@ class _CommentReviewScreenState extends State<CommentReviewScreen> {
       body: Obx(() => Stack(
             children: [
               _buildMainContent(),
-              if (_showReplyBox) _buildReplyBox(),
               _buildNewReplyButton(),
             ],
           )),
@@ -166,7 +174,7 @@ class _CommentReviewScreenState extends State<CommentReviewScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
+           Text(
               '${reviewController.categoryName} / ${reviewController.itemName}',
               style: Theme.of(context).textTheme.titleLarge,
             ),
@@ -179,52 +187,43 @@ class _CommentReviewScreenState extends State<CommentReviewScreen> {
         ),
       );
 
-  Widget _buildListItem(dynamic item) {
-    if (item is ReviewModel)
-      return _ReviewTile(review: item, onReply: _toggleReplyBox);
-    if (item is CommentModel) return CommentTile(comment: item);
+  // In your CommentReviewScreen widget
+Widget _buildListItem(dynamic item) {
+    if (item is ReviewModel) {
+      return _ReviewTile(
+        review: item,
+        onReply: () => _handleReplyPress(item.reviewId),
+      );
+    }
+    if (item is CommentModel) {
+      return CommentTile(
+        comment: item,
+        onReply: () => _handleCommentReplyPress(item.commentId),
+      );
+    }
     return const SizedBox.shrink();
   }
 
-  Widget _buildReplyBox() {
-    return Align(
-      alignment: Alignment.bottomCenter,
-      child: Container(
-        color: Colors.white,
-        padding: const EdgeInsets.all(8),
-        child: Row(
-          children: [
-            Expanded(
-              child: TextField(
-                controller: _replyController,
-                maxLines: 3,
-                decoration: InputDecoration(
-                  hintText: 'Write a reply...',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  suffixIcon:
-                      _selectedEmoji != null ? Text(_selectedEmoji!) : null,
-                ),
-              ),
-            ),
-            IconButton(
-              icon: const Icon(Icons.attach_file),
-              onPressed: () => _pickMedia(ImageSource.gallery),
-            ),
-            IconButton(
-              icon: const Icon(Icons.emoji_emotions),
-              onPressed: _pickEmoji,
-            ),
-            IconButton(
-              icon: const Icon(Icons.send),
-              onPressed: () {
-                _replyController.clear();
-                _toggleReplyBox();
-              },
-            ),
-          ],
-        ),
+void _handleCommentReplyPress(String commentId) {
+  showModalBottomSheet(
+    context: context,
+    isScrollControlled: true,
+    builder: (context) => ReplySection(
+      parentId: commentId,
+      itemId: widget.itemId,
+      onClose: () => Navigator.pop(context),
+    ),
+  );
+}
+
+  void _handleReplyPress(String parentId) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (context) => ReplySection(
+        parentId: parentId,
+        itemId: widget.itemId,
+        onClose: () => Navigator.pop(context),
       ),
     );
   }
@@ -255,6 +254,8 @@ class _ReviewTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final replyController = Get.find<ReplyController>();
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -268,7 +269,335 @@ class _ReviewTile extends StatelessWidget {
         const SizedBox(height: 12),
         _ReviewTags(tags: review.tags),
         _InteractionButtons(onReply: onReply),
+        _buildRepliesSection(replyController),
       ],
+    );
+  }
+
+  Widget _buildRepliesSection(ReplyController controller) {
+    return StreamBuilder<List<ReplyModel>>(
+      stream: ReplyRepository().getReplies(review.reviewId),
+      builder: (context, snapshot) {
+        if (snapshot.hasError) {
+          return Padding(
+            padding: const EdgeInsets.only(top: 8.0),
+            child: Text('Error: ${snapshot.error}'),
+          );
+        }
+
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Padding(
+            padding: EdgeInsets.only(top: 8.0),
+            child: CircularProgressIndicator(strokeWidth: 2),
+          );
+        }
+
+        final replies = snapshot.data!;
+        if (replies.isEmpty) return const SizedBox.shrink();
+
+        final isExpanded = controller.expandedReplies[review.reviewId] ?? false;
+        final visibleReplies = isExpanded ? replies : replies.take(1).toList();
+
+        return Padding(
+          padding: const EdgeInsets.only(left: 16.0, top: 8.0),
+          child: Column(
+            children: [
+              ...visibleReplies.map((reply) => ReplyTile(
+                    reply: reply,
+                    isLast: reply == visibleReplies.last,
+                  )),
+              if (replies.length > 1 && !isExpanded)
+                _ViewMoreButton(
+                  count: replies.length - 1,
+                  onTap: () => controller.toggleExpansion(review.reviewId),
+                ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _ViewMoreButton extends StatelessWidget {
+  final int count;
+  final VoidCallback onTap;
+
+  const _ViewMoreButton({required this.count, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return TextButton(
+      onPressed: onTap,
+      style: TextButton.styleFrom(
+        padding: EdgeInsets.zero,
+        visualDensity: VisualDensity.compact,
+      ),
+      child: Text(
+        'View $count more replies',
+        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              color: Colors.blue,
+              decoration: TextDecoration.underline,
+            ),
+      ),
+    );
+  }
+}
+
+class ReplyTile extends StatelessWidget {
+  final ReplyModel reply;
+  final bool isLast;
+
+  const ReplyTile({super.key, required this.reply, this.isLast = false});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.only(left: 16.0, top: 8.0),
+      decoration: BoxDecoration(
+        border: Border(
+          left: BorderSide(
+            color: Colors.grey.shade300,
+            width: 2.0,
+          ),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildHeader(context),
+          _buildContent(context),
+          _buildMedia(),
+          _buildInteractionBar(),
+          if (!isLast) const Divider(height: 24),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHeader(BuildContext context) {
+    final userController = Get.find<UserController>();
+    final isCurrentUser = userController.user.value.id == reply.authorId;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 4.0),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          CircleAvatar(
+            radius: 16,
+            backgroundImage: CachedNetworkImageProvider(reply.authorName),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        reply.authorName,
+                        style:
+                            Theme.of(context).textTheme.labelMedium?.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    if (isCurrentUser) _buildMenuButton(context),
+                  ],
+                ),
+                Text(
+                  Get.find<ReplyController>().getTimeAgo(reply.timestamp),
+                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                        fontSize: 10,
+                      ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMenuButton(BuildContext context) {
+    return PopupMenuButton<String>(
+      icon: const Icon(Icons.more_vert, size: 20),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(8),
+      ),
+      onSelected: (value) => _handleMenuSelection(value, context),
+      itemBuilder: (context) => [
+        const PopupMenuItem<String>(
+          value: 'edit',
+          child: ListTile(
+            dense: true,
+            leading: Icon(Icons.edit, size: 20),
+            title: Text('Edit'),
+          ),
+        ),
+        const PopupMenuItem<String>(
+          value: 'delete',
+          child: ListTile(
+            dense: true,
+            leading: Icon(Icons.delete, size: 20, color: Colors.red),
+            title: Text('Delete', style: TextStyle(color: Colors.red)),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildContent(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: Text(
+        reply.text,
+        style: Theme.of(context).textTheme.bodyMedium,
+      ),
+    );
+  }
+
+  Widget _buildMedia() {
+    if (reply.mediaUrls.isEmpty) return const SizedBox.shrink();
+
+    return SizedBox(
+      height: 100,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        itemCount: reply.mediaUrls.length,
+        separatorBuilder: (_, __) => const SizedBox(width: 8),
+        itemBuilder: (context, index) {
+          final url = reply.mediaUrls[index];
+          return ClipRRect(
+            borderRadius: BorderRadius.circular(8),
+            child: CachedNetworkImage(
+              imageUrl: url,
+              width: 100,
+              fit: BoxFit.cover,
+              errorWidget: (_, __, ___) => const Icon(Icons.error),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildInteractionBar() {
+    return Row(
+      children: [
+        Obx(() {
+          final controller = Get.find<ReplyController>();
+          final likes = controller.likedReplies[reply.replyId] ?? 0;
+          return Row(
+            children: [
+              IconButton(
+                icon: Icon(
+                  Icons.thumb_up,
+                  size: 18,
+                  color: controller.userLikes[reply.replyId] == true
+                      ? Colors.blue
+                      : Colors.grey,
+                ),
+                onPressed: () => controller.toggleLike(reply.replyId),
+              ),
+              Text('$likes'),
+            ],
+          );
+        }),
+        const SizedBox(width: 16),
+        Obx(() {
+          final controller = Get.find<ReplyController>();
+          final dislikes = controller.dislikedReplies[reply.replyId] ?? 0;
+          return Row(
+            children: [
+              IconButton(
+                icon: Icon(
+                  Icons.thumb_down,
+                  size: 18,
+                  color: controller.userDislikes[reply.replyId] == true
+                      ? Colors.red
+                      : Colors.grey,
+                ),
+                onPressed: () => controller.toggleDislike(reply.replyId),
+              ),
+              Text('$dislikes'),
+            ],
+          );
+        }),
+      ],
+    );
+  }
+
+  void _handleMenuSelection(String value, BuildContext context) {
+    switch (value) {
+      case 'edit':
+        _navigateToEditScreen(context);
+        break;
+      case 'delete':
+        _showDeleteConfirmation();
+        break;
+    }
+  }
+
+  void _showDeleteConfirmation() {
+    Get.dialog(
+      AlertDialog(
+        title: const Text('Delete Reply'),
+        content: const Text('Are you sure you want to delete this reply?'),
+        actions: [
+          TextButton(
+            onPressed: () => Get.back(),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () {
+              Get.back();
+              Get.find<ReplyController>().deleteReply(reply.replyId);
+            },
+            child: const Text(
+              'Delete',
+              style: TextStyle(color: Colors.red),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _navigateToEditScreen(BuildContext context) {
+    final controller = Get.find<ReplyController>();
+    controller.startEditing(reply);
+    Get.to(() => EditReplyScreen(reply: reply));
+  }
+
+  void _handleDelete() {
+    Get.dialog(
+      AlertDialog(
+        title: const Text('Confirm Delete'),
+        content: const Text('Are you sure you want to delete this reply?'),
+        actions: [
+          TextButton(
+            onPressed: () => Get.back(),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () async {
+              Get.back();
+              try {
+                await Get.find<ReplyController>().deleteReply(reply.replyId);
+                Get.snackbar('Success', 'Reply deleted successfully');
+              } catch (e) {
+                Get.snackbar(
+                    'Error', 'Failed to delete reply: ${e.toString()}');
+              }
+            },
+            child: const Text('Delete', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -278,22 +607,33 @@ class _UserHeader extends StatelessWidget {
 
   const _UserHeader({required this.review});
 
+  // Helper function to get the appropriate profile image
+  ImageProvider getProfileImage() {
+    if (review.isVisible == true) {
+      return review.userProfile.isNotEmpty
+          ? NetworkImage(review.userProfile)
+          : const AssetImage(
+              'Assets/App_Assets/authentication_assets/user1.png');
+    }
+    return const AssetImage(
+        'Assets/App_Assets/authentication_assets/auth2.png');
+  }
+
   @override
   Widget build(BuildContext context) {
     return Row(
       children: [
         CircleAvatar(
-          backgroundImage: review.userProfile.isNotEmpty
-              ? NetworkImage(review.userProfile)
-              : const AssetImage(
-                      'Assets/App_Assets/authentication_assets/user1.png')
-                  as ImageProvider,
+          backgroundImage: getProfileImage(),
         ),
         const SizedBox(width: 12),
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(review.username),
+            Text(
+              review.isVisible == true ? review.username : 'Anonymous',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
             Text(
               ReviewController.instance.getTimeAgo(review.timestamp),
               style: Theme.of(context).textTheme.bodySmall,
