@@ -13,7 +13,15 @@ class ItemDetailScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ItemController controller = Get.put(ItemController());
-    final String itemId = Get.arguments as String;
+    final String? itemId = Get.arguments as String?;
+
+    // Handle null itemId immediately
+    if (itemId == null) {
+      return Scaffold(
+        appBar: const EAppBar(titlt: Text('Item Details'), showBackArrow: true),
+        body: const Center(child: Text('Item ID not provideds')),
+      );
+    }
 
     // Fetch item details when screen loads
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -61,7 +69,7 @@ class ItemDetailScreen extends StatelessWidget {
                     _buildTitleSection(item),
                     const SizedBox(height: 25),
 
-                    // Static Rating Section (as per requirements)
+                    // Rating Section
                     const RatingBarWidget(
                       customerServiceRating: 57,
                       qualityOfServiceRating: 37,
@@ -89,10 +97,11 @@ class ItemDetailScreen extends StatelessWidget {
   }
 
   Widget _buildItemImage(Item item) {
+    final imageUrl = item.profileImage;
     return Center(
-      child: item.profileImage.isNotEmpty
+      child: (imageUrl.isNotEmpty)
           ? Image.network(
-              item.profileImage,
+              imageUrl,
               height: 200,
               loadingBuilder: (context, child, loadingProgress) {
                 if (loadingProgress == null) return child;
@@ -138,10 +147,10 @@ class ItemDetailScreen extends StatelessWidget {
                 overflow: TextOverflow.ellipsis,
               ),
               const SizedBox(height: 8),
-              // Tags
+              // Handle potential null tags
               Wrap(
                 spacing: 8,
-                children: item.tags
+                children: (item.tags ?? [])
                     .map((tag) => Text(
                           '#$tag',
                           style: const TextStyle(
@@ -154,7 +163,6 @@ class ItemDetailScreen extends StatelessWidget {
             ],
           ),
         ),
-        // Static Percentage Box (as per requirements)
         Container(
           padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 8),
           decoration: BoxDecoration(
@@ -207,14 +215,14 @@ class ItemDetailScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildInfoRow(String label, String value) {
+  Widget _buildInfoRow(String label, String? value) {
     return Row(
       children: [
         Text('$label ',
             style: const TextStyle(fontSize: 16, color: Colors.grey)),
         Expanded(
           child: Text(
-            value.isNotEmpty ? value : 'Not available',
+            (value == null || value.isEmpty) ? 'Not available' : value,
             style: const TextStyle(fontSize: 16, color: Colors.blue),
             overflow: TextOverflow.ellipsis,
           ),

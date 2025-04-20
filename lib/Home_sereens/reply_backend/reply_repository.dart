@@ -93,4 +93,28 @@ class ReplyRepository extends GetxController {
       throw 'Failed to update reply: ${e.toString()}';
     }
   }
+
+
+
+  static void initialize() {
+    Get.put(ReplyRepository(), permanent: true);
+  }
+
+
+ Future<void> deleteRepliesByParentId(String parentId) async {
+    try {
+      final query = await _firestore
+          .collection('replies')
+          .where('parentId', isEqualTo: parentId)
+          .get();
+
+      final batch = _firestore.batch();
+      for (final doc in query.docs) {
+        batch.delete(doc.reference);
+      }
+      await batch.commit();
+    } catch (e) {
+      throw 'Failed to delete replies: ${e.toString()}';
+    }
+  }
 }

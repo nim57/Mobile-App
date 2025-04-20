@@ -4,6 +4,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../reply_backend/reply_repository.dart';
 import 'comment_model.dart';
 import 'comment_repotory.dart';
 
@@ -12,6 +13,7 @@ class CommentController extends GetxController {
 
   final CommentRepository _repository = CommentRepository();
   final RxList<CommentModel> comments = <CommentModel>[].obs;
+   final ReplyRepository _replyRepository = ReplyRepository();
   final RxBool isLoading = false.obs;
   final RxBool isVisible = true.obs;
   final RxString errorMessage = ''.obs;
@@ -115,5 +117,30 @@ class CommentController extends GetxController {
   void onClose() {
     _commentsSubscription?.cancel();
     super.onClose();
+  }
+
+   Future<void> deleteComment(String commentId) async {
+    try {
+      isLoading(true);
+      
+      // Delete associated replies
+      await _replyRepository.deleteRepliesByParentId(commentId);
+      
+      // Delete the comment
+      await _repository.deleteComment(commentId);
+      
+      // Update local list
+      comments.removeWhere((comment) => comment.commentId == commentId);
+      
+      Get.snackbar('Success', 'Comment deleted successfully');
+    } catch (e) {
+      Get.snackbar('Error', 'Failed to delete comment: ${e.toString()}');
+    } finally {
+      isLoading(false);
+    }
+  }
+
+  void startEditing(CommentModel comment) {
+    // Initialize any editing state if needed
   }
 }

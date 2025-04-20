@@ -42,7 +42,7 @@ class Item_tile extends StatelessWidget {
               name,
               textAlign: TextAlign.center,
               style: const TextStyle(
-                fontSize: 20,
+                fontSize: 15,
                 fontWeight: FontWeight.bold,
                 color: Colors.black,
               ),

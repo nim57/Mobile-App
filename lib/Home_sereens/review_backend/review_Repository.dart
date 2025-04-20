@@ -46,4 +46,13 @@ class ReviewRepository {
       'timestamp': review.timestamp,
     });
   }
+
+
+   Future<void> deleteReview(String reviewId) async {
+    try {
+      await _firestore.collection('reviews').doc(reviewId).delete();
+    } catch (e) {
+      throw 'Failed to delete review: ${e.toString()}';
+    }
+  }
 }

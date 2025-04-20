@@ -36,7 +36,11 @@ class CommentRepository {
       throw 'Failed to add comment: $e';
     }
   }
-
-
-  
+ Future<void> deleteComment(String commentId) async {
+    try {
+      await _firestore.collection('comments').doc(commentId).delete();
+    } catch (e) {
+      throw 'Failed to delete comment: ${e.toString()}';
+    }
+  }
 }

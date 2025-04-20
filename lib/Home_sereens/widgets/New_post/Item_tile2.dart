@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../../item_backend/item_model.dart';
- // Update with your path
+// Update with your path
 
 class Item_tile2 extends StatelessWidget {
   const Item_tile2({
@@ -41,7 +41,9 @@ class Item_tile2 extends StatelessWidget {
             // Item Name
             Text(
               item.name,
-              style: Get.textTheme.titleSmall?.copyWith(
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontSize: 15,
                 fontWeight: FontWeight.bold,
                 color: Colors.black,
               ),

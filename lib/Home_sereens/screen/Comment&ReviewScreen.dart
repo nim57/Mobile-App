@@ -8,6 +8,7 @@ import '../../authentication_files/featuers/personalization/user_controller.dart
 import '../../common/widgets/appbar/appbar.dart';
 import '../comment_backend/comment_controller.dart';
 import '../comment_backend/comment_model.dart';
+import '../comment_backend/comment_tile.dart';
 import '../reply_backend/edit_Screen.dart';
 import '../reply_backend/reply_controller.dart';
 import '../reply_backend/reply_model.dart';
@@ -174,7 +175,7 @@ class _CommentReviewScreenState extends State<CommentReviewScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-           Text(
+            Text(
               '${reviewController.categoryName} / ${reviewController.itemName}',
               style: Theme.of(context).textTheme.titleLarge,
             ),
@@ -188,7 +189,7 @@ class _CommentReviewScreenState extends State<CommentReviewScreen> {
       );
 
   // In your CommentReviewScreen widget
-Widget _buildListItem(dynamic item) {
+  Widget _buildListItem(dynamic item) {
     if (item is ReviewModel) {
       return _ReviewTile(
         review: item,
@@ -204,17 +205,17 @@ Widget _buildListItem(dynamic item) {
     return const SizedBox.shrink();
   }
 
-void _handleCommentReplyPress(String commentId) {
-  showModalBottomSheet(
-    context: context,
-    isScrollControlled: true,
-    builder: (context) => ReplySection(
-      parentId: commentId,
-      itemId: widget.itemId,
-      onClose: () => Navigator.pop(context),
-    ),
-  );
-}
+  void _handleCommentReplyPress(String commentId) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (context) => ReplySection(
+        parentId: commentId,
+        itemId: widget.itemId,
+        onClose: () => Navigator.pop(context),
+      ),
+    );
+  }
 
   void _handleReplyPress(String parentId) {
     showModalBottomSheet(
@@ -255,6 +256,8 @@ class _ReviewTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final replyController = Get.find<ReplyController>();
+    final userController = Get.find<UserController>();
+    final isCurrentUser = userController.user.value.id == review.userId;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -605,7 +608,9 @@ class ReplyTile extends StatelessWidget {
 class _UserHeader extends StatelessWidget {
   final ReviewModel review;
 
-  const _UserHeader({required this.review});
+  _UserHeader({required this.review});
+  final userController = Get.find<UserController>();
+  final isCurrentUser = true;
 
   // Helper function to get the appropriate profile image
   ImageProvider getProfileImage() {
@@ -617,6 +622,44 @@ class _UserHeader extends StatelessWidget {
     }
     return const AssetImage(
         'Assets/App_Assets/authentication_assets/auth2.png');
+  }
+
+  Widget _buildDeleteMenu(BuildContext context) {
+    return PopupMenuButton<String>(
+      itemBuilder: (context) => [
+        const PopupMenuItem(
+          value: 'delete',
+          child: ListTile(
+            leading: Icon(Icons.delete, color: Colors.red),
+            title: Text('Delete Review', style: TextStyle(color: Colors.red)),
+          ),
+        ),
+      ],
+      onSelected: (value) => _showDeleteConfirmation(context),
+    );
+  }
+
+  void _showDeleteConfirmation(BuildContext context) {
+    Get.dialog(
+      AlertDialog(
+        title: const Text('Delete Review'),
+        content: const Text(
+            'Are you sure you want to delete this review? This action cannot be undone.'),
+        actions: [
+          TextButton(
+            onPressed: () => Get.back(),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () {
+              Get.back();
+              Get.find<ReviewController>().deleteReview(review.reviewId);
+            },
+            child: const Text('Delete', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -640,6 +683,7 @@ class _UserHeader extends StatelessWidget {
             ),
           ],
         ),
+        if (isCurrentUser) _buildDeleteMenu(context),
       ],
     );
   }
