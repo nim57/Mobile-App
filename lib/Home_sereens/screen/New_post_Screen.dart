@@ -6,6 +6,7 @@ import '../category_backend/category_controller.dart';
 import '../widgets/New_post/item_tile.dart';
 import 'Add_Mising_item.dart';
 import 'Items_Screen.dart';
+import 'add_branch.dart';
  // Update with your actual path
 
 class NewPost_Screen extends StatelessWidget {
@@ -15,7 +16,8 @@ class NewPost_Screen extends StatelessWidget {
   Widget build(BuildContext context) {
     // Initialize category controller
     final controller = Get.put(CategoryController());
-    
+    final GlobalKey buttonKey = GlobalKey();
+
     return Scaffold(
       backgroundColor: Colors.white,
       body: Obx(() {
@@ -64,25 +66,56 @@ class NewPost_Screen extends StatelessWidget {
                 ),
 
                 // Add missing item button
-                Align(
-                  alignment: Alignment.bottomRight,
-                  child: Padding(
-                    padding: const EdgeInsets.only(bottom: 70, right: 20),
-                    child: GestureDetector(
-                      onTap: () => Get.to(() => const Add_Mising_item()),
-                      child: Container(
-                        padding: const EdgeInsets.all(8.0),
-                        decoration: const BoxDecoration(
-                          borderRadius: BorderRadius.all(Radius.circular(13)),
-                          color: Colors.blue,
-                        ),
-                        child: const Icon(Iconsax.add, 
-                            size: 30, 
-                            color: Colors.black),
-                      ),
-                    ),
-                  ),
-                ),
+              Align(
+  alignment: Alignment.bottomRight,
+  child: Padding(
+    padding: const EdgeInsets.only(bottom: 70, right: 20),
+    child: GestureDetector(
+      onTap: () async {
+        final RenderBox button = buttonKey.currentContext!.findRenderObject() as RenderBox;
+        final RenderBox overlay = Overlay.of(context).context.findRenderObject() as RenderBox;
+        
+        final RelativeRect position = RelativeRect.fromRect(
+          Rect.fromPoints(
+            button.localToGlobal(Offset.zero, ancestor: overlay),
+            button.localToGlobal(button.size.bottomRight(Offset.zero), ancestor: overlay),
+          ),
+          Offset.zero & overlay.size,
+        );
+
+        final String? result = await showMenu<String>(
+          context: context,
+          position: position,
+          items: const [
+            PopupMenuItem<String>(
+              value: 'main',
+              child: Text('Add Main Item'),
+            ),
+            PopupMenuItem<String>(
+              value: 'branch',
+              child: Text('Add Branch'),
+            ),
+          ],
+        );
+
+        if (result == 'main') {
+          Get.to(() => const Add_Mising_item());
+        } else if (result == 'branch') {
+          Get.to(() => const AddBranchItem());
+        }
+      },
+      child: Container(
+        key: buttonKey,
+        padding: const EdgeInsets.all(8.0),
+        decoration: const BoxDecoration(
+          borderRadius: BorderRadius.all(Radius.circular(13)),
+          color: Colors.blue,
+        ),
+        child: const Icon(Iconsax.add, size: 30, color: Colors.black),
+      ),
+    ),
+  ),
+),
               ],
             ),
           ),

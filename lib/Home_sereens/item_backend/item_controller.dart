@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:echo_project_123/Home_sereens/item_review_summry/item_review_summary_model.dart';
 import 'package:flutter/foundation.dart' as foundation;
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -7,6 +8,7 @@ import 'package:image_picker/image_picker.dart';
 import '../../../../../Utils/constants/image_Strings.dart';
 import '../../../../../Utils/popups/fullscreen_loader.dart';
 import '../../authentication_files/common/widgets/loaders/lodaders.dart';
+import '../item_review_summry/item_review_repository.dart';
 import 'item_model.dart';
 import 'item_repository.dart';
 
@@ -25,6 +27,9 @@ class ItemController extends GetxController {
   final imageUploading = false.obs;
   final hasBranch = false.obs;
   final errorMessage = ''.obs;
+  final userEngagementPercentage = 0.0.obs;
+  final engagementLoading = false.obs;
+  final engagementError = ''.obs;
 
   // Form Controllers
   final categoryIdController = TextEditingController();
@@ -182,17 +187,17 @@ class ItemController extends GetxController {
   }
 
   // Add this to your ItemController
-Future<void> loadItemForEdit(String itemId) async {
-  try {
-    itemLoading.value = true;
-    final item = await itemRepository.getItemById(itemId);
-    selectedItem.value = item;
-  } catch (e) {
-    ELoaders.errorsnackBar(title: 'Error!', message: 'Failed to load item');
-  } finally {
-    itemLoading.value = false;
+  Future<void> loadItemForEdit(String itemId) async {
+    try {
+      itemLoading.value = true;
+      final item = await itemRepository.getItemById(itemId);
+      selectedItem.value = item;
+    } catch (e) {
+      ELoaders.errorsnackBar(title: 'Error!', message: 'Failed to load item');
+    } finally {
+      itemLoading.value = false;
+    }
   }
-}
 
   /// Update existing item
   Future<void> updateItem() async {
@@ -252,25 +257,22 @@ Future<void> loadItemForEdit(String itemId) async {
   }
 
   Future<void> fetchItemsByCategory(String categoryId) async {
-  try {
-    itemLoading.value = true;
-    errorMessage.value = '';
-    items.bindStream(
-      itemRepository.streamItemsByCategory(categoryId),
-    );
-  } on FirebaseException catch (e) {
-    errorMessage.value = 'Firebase Error: ${e.message}';
-    items.assignAll([]);
-  } catch (e) {
-    errorMessage.value = 'Error: ${e.toString()}';
-    items.assignAll([]);
-  } finally {
-    itemLoading.value = false;
+    try {
+      itemLoading.value = true;
+      errorMessage.value = '';
+      items.bindStream(
+        itemRepository.streamItemsByCategory(categoryId),
+      );
+    } on FirebaseException catch (e) {
+      errorMessage.value = 'Firebase Error: ${e.message}';
+      items.assignAll([]);
+    } catch (e) {
+      errorMessage.value = 'Error: ${e.toString()}';
+      items.assignAll([]);
+    } finally {
+      itemLoading.value = false;
+    }
   }
-}
-
-
-
 
   /// Delete item
   Future<void> deleteItem(String itemId) async {
@@ -290,11 +292,10 @@ Future<void> loadItemForEdit(String itemId) async {
     }
   }
 
-  
   void clearItems() {
-  items.assignAll([]);
-  errorMessage.value = '';
-}
+    items.assignAll([]);
+    errorMessage.value = '';
+  }
 
   /// Clear form fields
   void clearForm() {
@@ -335,5 +336,80 @@ Future<void> loadItemForEdit(String itemId) async {
     websiteController.dispose();
     phoneController.dispose();
     mapLocationController.dispose();
+  }
+
+  /// user presentage calculation
+
+  Future<void> loadUserEngagementData(String itemId) async {
+    try {
+      engagementLoading.value = true;
+      engagementError.value = '';
+
+      // Get total unique users
+      final totalUsers = await _getTotalUniqueUsers();
+      print('Total unique users: $totalUsers');
+
+      // Get users who reviewed/commented on this item
+      final engagedUsers = await _getEngagedUsers(itemId);
+      print('Engaged users for item $itemId: ${engagedUsers.length}');
+
+      // Calculate percentage
+      if (totalUsers > 0) {
+        userEngagementPercentage.value =
+            ((engagedUsers.length / totalUsers) * 100).roundToDouble();
+      } else {
+        userEngagementPercentage.value = 0.0;
+        engagementError.value = 'No users available';
+      }
+    } catch (e) {
+      engagementError.value = 'Failed to load engagement data: ${e.toString()}';
+      userEngagementPercentage.value = 0.0;
+      print('Error in loadUserEngagementData: $e');
+    } finally {
+      engagementLoading.value = false;
+    }
+  }
+
+  Future<int> _getTotalUniqueUsers() async {
+    try {
+      final query = await _firestore
+          .collection('users')
+          .get(const GetOptions(source: Source.server));
+
+      return query.size;
+    } catch (e) {
+      throw 'Failed to get total users: ${e.toString()}';
+    }
+  }
+
+  Future<List<String>> _getEngagedUsers(String itemId) async {
+    try {
+      // Assuming reviews are stored in a 'reviews' collection
+      // with both 'userId' and 'itemId' fields
+      final reviewsQuery = await _firestore
+          .collection('reviews')
+          .where('itemId', isEqualTo: itemId)
+          .get(const GetOptions(source: Source.server));
+
+      // Get unique user IDs from reviews
+      final userIds = reviewsQuery.docs
+          .map((doc) => doc.data()['userId'] as String? ?? '')
+          .where((id) => id.isNotEmpty)
+          .toSet()
+          .toList();
+
+      return userIds;
+    } catch (e) {
+      throw 'Failed to get engaged users: ${e.toString()}';
+    }
+  }
+
+  Future<ItemReviewSummary?> getReviewSummary(String itemId) async {
+    try {
+      return await ItemReviewRepository.instance.getSummaryByItem(itemId);
+    } catch (e) {
+      print('Error getting review summary: $e');
+      return null;
+    }
   }
 }

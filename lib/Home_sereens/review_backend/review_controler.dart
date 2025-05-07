@@ -1,23 +1,54 @@
+import 'dart:async'; // Keep this as the only async-related import
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import '../../authentication_files/common/widgets/loaders/lodaders.dart';
+import '../item_backend/item_controller.dart';
+import '../item_review_summry/item_review_repository.dart';
+import '../item_review_summry/item_review_summary_model.dart';
 import '../reply_backend/reply_repository.dart';
 import '../screen/pending_message.dart';
 import 'review_Repository.dart';
 import 'review_model.dart';
 
+class Debounce {
+  final Duration delay;
+  Timer? _timer;
+
+  Debounce(this.delay);
+
+  void run(VoidCallback action) {
+    _timer?.cancel();
+    _timer = Timer(delay, action);
+  }
+
+  void dispose() {
+    _timer?.cancel();
+  }
+}
+
 class ReviewController extends GetxController {
   static ReviewController get instance => Get.find();
+
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   final ReviewRepository _repository = ReviewRepository();
   final RxMap<String, double> ratings = <String, double>{}.obs;
   final RxList<ReviewModel> reviews = <ReviewModel>[].obs;
   final ReplyRepository _replyRepository = ReplyRepository();
+  final RxMap<String, double> averageRatings = <String, double>{}.obs;
+  final RxList<String> currentCriteria = <String>[].obs;
+  final ItemReviewRepository _reviewSummaryRepo = ItemReviewRepository.instance;
+  final ItemController _itemController = ItemController.instance;
+  final Debounce _debounce = Debounce(const Duration(seconds: 5));
+  final RxString currentItemId = ''.obs;
   final RxBool isLoading = false.obs;
   final RxString errorMessage = ''.obs;
   final RxString categoryName = ''.obs;
   final RxString itemName = ''.obs;
   final RxBool isVisible = true.obs;
+  final RxBool isUpdating = false.obs;
+  final RxString updateError = ''.obs;
   final categoryCriteria = {
     "Mobile Repair Services": [
       "Repair Quality",
@@ -331,11 +362,22 @@ class ReviewController extends GetxController {
 
   Future<void> fetchReviews(String itemId, String categoryId) async {
     try {
+      if (currentItemId.value == itemId) return;
+      currentItemId.value = itemId;
+
       isLoading(true);
       errorMessage('');
 
+      currentCriteria.value = categoryCriteria[categoryName] ?? [];
+
       _repository.getReviewsByItem(itemId).listen((reviewsList) {
         reviews.value = reviewsList;
+        _calculateAverageRatings();
+        print('Reviews for $itemId:');
+        for (var r in reviewsList) {
+          print(r.ratings);
+        }
+        print('Calculated averages: $averageRatings');
         isLoading(false);
       }, onError: (e) {
         if (e.toString().contains('index')) {
@@ -492,5 +534,94 @@ class ReviewController extends GetxController {
 
   void startEditing(ReviewModel review) {
     ratings.value = Map.from(review.ratings);
+  }
+
+// In ReviewController.dart
+  void _calculateAverageRatings() {
+    final newAverages = <String, double>{};
+    final uniqueReviews = _removeDuplicateReviews(reviews);
+
+    for (final criterion in currentCriteria) {
+      double total = 0.0;
+      int totalReviews = uniqueReviews.length;
+
+      for (final review in uniqueReviews) {
+        total += review.ratings[criterion] ?? 0.0;
+      }
+
+      newAverages[criterion] =
+          totalReviews > 0 ? (total / totalReviews) : 0.0;
+    }
+
+    averageRatings.assignAll(newAverages);
+    _debounce.run(_saveReviewSummary);
+  }
+
+  List<ReviewModel> _removeDuplicateReviews(List<ReviewModel> reviews) {
+    final Map<String, ReviewModel> latestReviews = {};
+    for (final review in reviews) {
+      final existing = latestReviews[review.userId];
+      if (existing == null ||
+          review.timestamp.compareTo(existing.timestamp) > 0) {
+        latestReviews[review.userId] = review;
+      }
+    }
+    return latestReviews.values.toList();
+  }
+  //_calculateAverageRatings()
+
+  @override
+  void onClose() {
+    _debounce.dispose();
+    super.onClose();
+  }
+
+  Future<void> _saveReviewSummary() async {
+    try {
+      if (currentItemId.value.isEmpty || categoryName.value.isEmpty) return;
+
+      // 1. Verify item existence first
+      final item =
+          await _itemController.itemRepository.getItemById(currentItemId.value);
+      if (item.id.isEmpty) {
+        throw 'Item not found in database';
+      }
+
+      // 2. Create document reference with explicit path
+      final summary = ItemReviewSummary(
+        itemId: currentItemId.value,
+        categoryId: item.categoryId,
+        itemName: item.name,
+        totalReviews: reviews.length,
+        reviewPoints: averageRatings.value,
+        lastUpdated: Timestamp.now(),
+      );
+
+      // 3. Use transaction for atomic write
+      await _firestore.runTransaction((transaction) async {
+        final docRef = _firestore.collection('itemReviews').doc(summary.itemId);
+        transaction.set(docRef, summary.toFirestore(), SetOptions(merge: true));
+      });
+
+      print('Successfully saved review summary for ${item.name}');
+    } on FirebaseException catch (e) {
+      print('Firestore Error: ${e.code} - ${e.message}');
+      ELoaders.errorsnackBar(
+          title: 'Save Failed', message: _getErrorMessage(e.code));
+    } catch (e) {
+      print('General Error: $e');
+      ELoaders.errorsnackBar(title: 'Save Failed', message: e.toString());
+    }
+  }
+
+  String _getErrorMessage(String code) {
+    switch (code) {
+      case 'not-found':
+        return 'The item document was not found. Please refresh and try again.';
+      case 'permission-denied':
+        return 'You don\'t have permission to perform this action.';
+      default:
+        return 'An unexpected error occurred. Please try again.';
+    }
   }
 }

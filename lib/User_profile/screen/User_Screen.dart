@@ -1,4 +1,3 @@
-import 'package:echo_project_123/User_profile/screen/Reviews_screen.dart';
 import 'package:echo_project_123/User_profile/screen/your_post_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -151,7 +150,7 @@ class SettingScreen extends StatelessWidget {
           body: const TabBarView(
             children: [
               YourPost_Screen(),
-              YourReviewScreen(),
+             // YourReviewScreen(),
             ],
           ),
         ),

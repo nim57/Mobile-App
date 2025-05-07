@@ -4,6 +4,7 @@ import '../../Utils/constants/colors.dart';
 import '../../common/widgets/appbar/appbar.dart';
 import '../item_backend/item_controller.dart';
 import '../item_backend/item_model.dart';
+import '../review_backend/review_controler.dart';
 import '../widgets/widgets_home/ratingBarWidget.dart';
 import 'Comment&ReviewScreen.dart';
 
@@ -13,19 +14,19 @@ class ItemDetailScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ItemController controller = Get.put(ItemController());
+    final ReviewController reviewController = Get.put(ReviewController());
     final String? itemId = Get.arguments as String?;
 
-    // Handle null itemId immediately
     if (itemId == null) {
       return Scaffold(
         appBar: const EAppBar(titlt: Text('Item Details'), showBackArrow: true),
-        body: const Center(child: Text('Item ID not provideds')),
+        body: const Center(child: Text('Item ID not provided')),
       );
     }
 
-    // Fetch item details when screen loads
     WidgetsBinding.instance.addPostFrameCallback((_) {
       controller.loadItemForEdit(itemId);
+      controller.loadUserEngagementData(itemId);
     });
 
     return Scaffold(
@@ -54,37 +55,33 @@ class ItemDetailScreen extends StatelessWidget {
           );
         }
 
+        // Add post-frame callback for fetching reviews
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          reviewController.fetchReviews(item.id, item.categoryId);
+        });
+
         return SingleChildScrollView(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Item Image
               _buildItemImage(item),
+              const SizedBox(height: 16),
               Padding(
-                padding: const EdgeInsets.all(16.0),
+                padding: const EdgeInsets.all(28.0),
+                child: DynamicRatingBar(),
+              ),
+              const SizedBox(height: 16),
+              _buildTitleSection(item, controller),
+              const SizedBox(height: 16),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Title Section
-                    _buildTitleSection(item),
-                    const SizedBox(height: 25),
-
-                    // Rating Section
-                    const RatingBarWidget(
-                      customerServiceRating: 57,
-                      qualityOfServiceRating: 37,
-                    ),
-                    const SizedBox(height: 25),
-
-                    // Description
                     _buildDescriptionSection(item),
-                    const SizedBox(height: 16),
-
-                    // Contact Information
+                    const SizedBox(height: 20),
                     _buildContactInfoSection(item),
-                    const SizedBox(height: 32),
-
-                    // View Comments Button
+                    const SizedBox(height: 30),
                     _buildCommentsButton(item),
                   ],
                 ),
@@ -130,53 +127,73 @@ class ItemDetailScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildTitleSection(Item item) {
-    return Row(
-      children: [
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                item.name,
-                style: const TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
+  Widget _buildTitleSection(Item item, ItemController controller) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  item.name,
+                  style: const TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
                 ),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
-              const SizedBox(height: 8),
-              // Handle potential null tags
-              Wrap(
-                spacing: 8,
-                children: (item.tags ?? [])
-                    .map((tag) => Text(
-                          '#$tag',
-                          style: const TextStyle(
-                            fontSize: 18,
-                            color: Colors.blue,
-                          ),
-                        ))
-                    .toList(),
-              ),
-            ],
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 8,
+                  children: (item.tags ?? [])
+                      .map((tag) => Text(
+                            '#$tag',
+                            style: const TextStyle(
+                              fontSize: 18,
+                              color: Colors.blue,
+                            ),
+                          ))
+                      .toList(),
+                ),
+              ],
+            ),
           ),
-        ),
-        Container(
-          padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 8),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(13),
-            color: EColor.paccent,
-          ),
-          child: const Column(
-            children: [
-              Text("48%"),
-              Text("User Avg"),
-            ],
-          ),
-        ),
-      ],
+          _buildUserEngagementWidget(controller),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildUserEngagementWidget(ItemController controller) {
+    if (controller.engagementLoading.value) {
+      return const Padding(
+        padding: EdgeInsets.all(8.0),
+        child: CircularProgressIndicator(strokeWidth: 2),
+      );
+    }
+
+    if (controller.engagementError.value.isNotEmpty) {
+      return Tooltip(
+        message: controller.engagementError.value,
+        child: const Icon(Icons.error, color: Colors.red),
+      );
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 8),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(13),
+        color: EColor.paccent,
+      ),
+      child: Column(
+        children: [
+          Text("${controller.userEngagementPercentage.value}%"),
+          const Text("User Avg"),
+        ],
+      ),
     );
   }
 
