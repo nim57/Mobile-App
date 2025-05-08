@@ -2,17 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:get/get.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:echo_project_123/User_profile/widgets/change_name.dart';
-import 'package:echo_project_123/User_profile/widgets/profile_menu.dart';
 import 'package:echo_project_123/Utils/constants/image_Strings.dart';
-import 'package:echo_project_123/Utils/constants/sizes.dart';
 import 'package:echo_project_123/authentication_files/featuers/personalization/user_controller.dart';
 import 'package:echo_project_123/common/widgets/appbar/appbar.dart';
 import 'package:echo_project_123/Home_sereens/widgets/shimmer.dart';
-import 'package:echo_project_123/User_profile/widgets/Section_heading.dart';
-import 'package:echo_project_123/User_profile/widgets/i_circularImage.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'dart:math' as math;
+import 'dart:async';
+import 'package:flutter/services.dart';
+import 'package:image/image.dart' as img;
 
 import '../category_backend/category_controller.dart';
 import '../category_backend/category_model.dart';
@@ -27,126 +25,141 @@ class MapScreen extends StatefulWidget {
 }
 
 class _MapScreenState extends State<MapScreen> {
-  late GoogleMapController mapController;
+  GoogleMapController? _mapController;
+  final TextEditingController _searchController = TextEditingController();
+  final UserController _userController = UserController.instonce;
+  final CategoryController _categoryController = Get.put(CategoryController());
+  final ItemController _itemController = Get.put(ItemController());
+
   Position? _currentPosition;
   bool _locationEnabled = false;
-  final TextEditingController _searchController = TextEditingController();
-  final List<MapCategory> _categories = [];
-  final UserController userController = UserController.instonce;
-  final CategoryController categoryController = Get.put(CategoryController());
-  final ItemController itemController = Get.put(ItemController());
+  bool _isMapReady = false;
   Set<Marker> _markers = {};
   BitmapDescriptor? _customMarkerIcon;
   String? _selectedCategoryId;
+  Timer? _searchDebounce;
+  DateTime _lastCameraUpdate = DateTime.now();
+  final List<StreamSubscription> _subscriptions = [];
 
   @override
   void initState() {
     super.initState();
-    _setupControllerListeners();
-    _checkLocationStatus();
-    _createCustomMarker();
-    categoryController.fetchAllCategories();
+    _initializeMap();
   }
 
-
-  void _createCustomMarker() async {
-    final icon = await BitmapDescriptor.fromAssetImage(
-      const ImageConfiguration(size: Size(48, 48)),
-      'assets/icons/red_user_marker.png', // Add your custom marker asset
-    );
-    setState(() {
-      _customMarkerIcon = icon;
-    });
+  Future<void> _initializeMap() async {
+    await _loadCustomMarkerIcon();
+    _setupListeners();
+    await _checkLocationStatus();
+    await _categoryController.fetchAllCategories();
   }
 
-  void _setupControllerListeners() {
-    // Handle errors in profile image loading
-    ever(userController.imageUploading, (isUploading) {
-      if (isUploading) {
-        // Show loading indicator if needed
+  Future<void> _loadCustomMarkerIcon() async {
+    try {
+      final ByteData data = await rootBundle.load(EImages.Animal1);
+      final Uint8List bytes = data.buffer.asUint8List();
+      final img.Image? image = img.decodeImage(bytes);
+
+      if (image == null) {
+        throw Exception('Failed to decode image');
       }
-    });
 
-    ever(userController.user, (user) {
-      if (user.profilePicture.isEmpty) {
-        // Handle case when no profile picture exists
-        debugPrint('No profile picture available');
+      final Uint8List resizedBytes = Uint8List.fromList(
+          img.encodePng(img.copyResize(image, width: 96, height: 96)));
+
+      if (mounted) {
+        setState(() {
+          _customMarkerIcon = BitmapDescriptor.fromBytes(resizedBytes);
+        });
       }
-    });
+    } catch (e) {
+      debugPrint('Error loading custom marker: $e');
+      if (mounted) {
+        setState(() {
+          _customMarkerIcon =
+              BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueBlue);
+        });
+      }
+    }
   }
 
-  void _onMapCreated(GoogleMapController controller) {
-    mapController = controller;
+  void _setupListeners() {
+    _subscriptions.addAll([
+      _userController.imageUploading.listen((isUploading) {},
+          onError: (e) => debugPrint('Image upload error: $e')),
+      _itemController.items.listen((_) {
+        if (_isMapReady) _updateMapMarkers();
+      }, onError: (e) => debugPrint('Items stream error: $e')),
+    ]);
+  }
+
+  @override
+  void dispose() {
+    _mapController?.dispose();
+    _searchController.dispose();
+    _searchDebounce?.cancel();
+    for (var sub in _subscriptions) {
+      sub.cancel();
+    }
+    super.dispose();
   }
 
   Future<void> _checkLocationStatus() async {
     try {
       _locationEnabled = await Geolocator.isLocationServiceEnabled();
-      if (_locationEnabled) {
-        await _getCurrentLocation();
-      }
+      if (_locationEnabled) await _getCurrentLocation();
     } catch (e) {
-      Get.snackbar(
-          'Location Error', 'Failed to check location status: ${e.toString()}');
+      _showErrorSnackbar('Location Error', 'Failed to check location status');
     }
   }
 
   Future<void> _getCurrentLocation() async {
     try {
-      // Check location permissions
       final status = await Permission.location.status;
-      if (status.isDenied) {
-        await Permission.location.request();
-      }
+      if (status.isDenied) await Permission.location.request();
       if (status.isPermanentlyDenied) {
         await openAppSettings();
         return;
       }
 
-      // Get current position
       final position = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.high,
+        desiredAccuracy: LocationAccuracy.best,
       );
 
-      setState(() {
-        _currentPosition = position;
-        _locationEnabled = true;
-      });
+      if (mounted) {
+        setState(() {
+          _currentPosition = position;
+          _locationEnabled = true;
+        });
+      }
 
-      // Move camera to current position
-      mapController.animateCamera(
-        CameraUpdate.newLatLngZoom(
-          LatLng(position.latitude, position.longitude),
-          14.4746,
-        ),
-      );
+      _moveCameraToPosition(position);
     } on LocationServiceDisabledException {
       _showLocationEnableDialog();
     } catch (e) {
-      Get.snackbar('Location Error', 'Failed to get location: ${e.toString()}');
+      _showErrorSnackbar('Location Error', 'Failed to get current location');
     }
   }
 
   void _showLocationEnableDialog() {
     Get.dialog(
       AlertDialog(
-        title: Text('Location Services Disabled'),
-        content: Text('Please enable location services to use this feature.'),
+        title: const Text('Location Services Disabled'),
+        content:
+            const Text('Please enable location services to use this feature.'),
         actions: [
-          TextButton(
-            onPressed: () => Get.back(),
-            child: Text('Cancel'),
-          ),
+          TextButton(onPressed: () => Get.back(), child: const Text('Cancel')),
           TextButton(
             onPressed: () async {
               Get.back();
               await Geolocator.openLocationSettings();
               await _checkLocationStatus();
             },
-            child: Text('Enable'),
+            child: const Text('Enable'),
           ),
         ],
       ),
+      barrierDismissible: false,
     );
   }
 
@@ -156,45 +169,25 @@ class _MapScreenState extends State<MapScreen> {
         _showLocationEnableDialog();
         return;
       }
-
       if (_currentPosition == null) {
         await _getCurrentLocation();
-        return;
       }
       _moveCameraToPosition(_currentPosition!);
-
-      mapController.animateCamera(
-        CameraUpdate.newLatLngZoom(
-          LatLng(_currentPosition!.latitude, _currentPosition!.longitude),
-          14.4746,
-        ),
-      );
     } catch (e) {
-      Get.snackbar(
-          'Location Error', 'Failed to update location: ${e.toString()}');
+      _showErrorSnackbar('Location Error', 'Failed to find location');
     }
   }
 
-  void _updateMarkers(Position position) {
-    final marker = Marker(
-      markerId: const MarkerId('current_location'),
-      position: LatLng(position.latitude, position.longitude),
-      icon: _customMarkerIcon ?? BitmapDescriptor.defaultMarkerWithHue(0),
-      infoWindow: const InfoWindow(title: 'Your Location'),
-    );
-
-    setState(() {
-      _currentPosition = position;
-      _locationEnabled = true;
-      _markers = {marker};
-    });
-  }
-
   void _moveCameraToPosition(Position position) {
-    mapController.animateCamera(
+    if (!_isMapReady || _mapController == null) return;
+    if (DateTime.now().difference(_lastCameraUpdate).inMilliseconds < 500)
+      return;
+
+    _lastCameraUpdate = DateTime.now();
+    _mapController?.animateCamera(
       CameraUpdate.newLatLngZoom(
         LatLng(position.latitude, position.longitude),
-        14.4746,
+        14.0,
       ),
     );
   }
@@ -202,227 +195,265 @@ class _MapScreenState extends State<MapScreen> {
   Future<void> _handleCategorySelection(String categoryId) async {
     try {
       _selectedCategoryId = categoryId;
-      await itemController.fetchItemsByCategory(categoryId);
-      _updateMapMarkers();
+      await _itemController.fetchItemsByCategory(categoryId);
     } catch (e) {
-      Get.snackbar('Error', 'Failed to load items: ${e.toString()}');
+      _showErrorSnackbar('Error', 'Failed to load items');
     }
   }
+
   void _updateMapMarkers() {
+    if (!_isMapReady || _customMarkerIcon == null) return;
+
     final newMarkers = <Marker>{};
-    
-    for (final item in itemController.items) {
+    final items = _itemController.items
+        .where((item) => item.mapLocation.isNotEmpty)
+        .take(100)
+        .toList();
+
+    for (final item in items) {
       try {
         final position = _parseMapLocation(item.mapLocation);
         final marker = Marker(
           markerId: MarkerId(item.id),
           position: position,
-          icon: _customMarkerIcon ?? BitmapDescriptor.defaultMarker,
+          icon: _customMarkerIcon!,
           infoWindow: InfoWindow(
             title: item.name,
             snippet: item.description,
-            onTap: () => _showItemDetails(item),
           ),
+          onTap: () => _showItemDetails(item),
+          anchor: const Offset(0.5, 1.0),
         );
         newMarkers.add(marker);
       } catch (e) {
-        print('Error creating marker for item ${item.id}: $e');
+        debugPrint('Skipping invalid location for item ${item.id}: $e');
       }
     }
 
-    setState(() => _markers = newMarkers);
-    _adjustCameraToMarkers();
+    if (mounted) {
+      setState(() => _markers = newMarkers);
+    }
+
+    if (_markers.isNotEmpty) _adjustCameraToMarkers();
   }
 
-   LatLng _parseMapLocation(String locationUrl) {
+  LatLng _parseMapLocation(String location) {
     try {
-      // Example URL format: https://maps.google.com/?q=37.422,-122.084
-      final uri = Uri.parse(locationUrl);
-      final query = uri.queryParameters['q']?.split(',') ?? [];
-      if (query.length != 2) throw FormatException('Invalid location format');
-      
-      final lat = double.parse(query[0]);
-      final lng = double.parse(query[1]);
-      return LatLng(lat, lng);
+      if (location.startsWith('http')) {
+        final uri = Uri.parse(location);
+        final query = uri.queryParameters['q'] ?? '';
+        final coords = query.split(',').take(2).toList();
+        if (coords.length != 2)
+          throw const FormatException('Invalid URL coordinates');
+        return LatLng(
+          double.parse(coords[0].trim()),
+          double.parse(coords[1].trim()),
+        );
+      }
+
+      final coords = location.split(',').take(2).toList();
+      if (coords.length != 2)
+        throw const FormatException('Invalid coordinate format');
+      return LatLng(
+        double.parse(coords[0].trim()),
+        double.parse(coords[1].trim()),
+      );
+    } on FormatException {
+      rethrow;
     } catch (e) {
-      throw FormatException('Invalid map location: ${e.toString()}');
+      throw FormatException('Failed to parse location: $e');
     }
   }
 
   void _adjustCameraToMarkers() {
-    if (_markers.isEmpty) return;
+    if (_markers.isEmpty || _mapController == null) return;
 
-    final bounds = _calculateBounds();
-    mapController.animateCamera(
-      CameraUpdate.newLatLngBounds(bounds, 100.0),
-    );
-  }
-
-  LatLngBounds _calculateBounds() {
-    var southwest = const LatLng(double.maxFinite, double.maxFinite);
-    var northeast = const LatLng(double.minPositive, double.minPositive);
-
-    for (final marker in _markers) {
-      southwest = LatLng(
-        math.min(southwest.latitude, marker.position.latitude),
-        math.min(southwest.longitude, marker.position.longitude),
+    try {
+      final bounds = _markers.fold<LatLngBounds?>(
+        null,
+        (previous, marker) {
+          if (previous == null) {
+            return LatLngBounds(
+                southwest: marker.position, northeast: marker.position);
+          }
+          final southwest = LatLng(
+            math.min(previous.southwest.latitude, marker.position.latitude),
+            math.min(previous.southwest.longitude, marker.position.longitude),
+          );
+          final northeast = LatLng(
+            math.max(previous.northeast.latitude, marker.position.latitude),
+            math.max(previous.northeast.longitude, marker.position.longitude),
+          );
+          return LatLngBounds(southwest: southwest, northeast: northeast);
+        },
       );
-      northeast = LatLng(
-        math.max(northeast.latitude, marker.position.latitude),
-        math.max(northeast.longitude, marker.position.longitude),
-      );
+
+      if (bounds != null) {
+        Future.delayed(const Duration(milliseconds: 100), () {
+          if (_mapController != null && mounted) {
+            _mapController?.animateCamera(
+              CameraUpdate.newLatLngBounds(bounds, 100.0),
+            );
+          }
+        });
+      }
+    } catch (e) {
+      debugPrint('Error adjusting camera: $e');
     }
-
-    return LatLngBounds(southwest: southwest, northeast: northeast);
   }
 
   void _showItemDetails(Item item) {
     Get.toNamed('/item-details', arguments: item.id);
   }
 
+  void _showErrorSnackbar(String title, String message) {
+    if (!mounted) return;
+    Get.snackbar(
+      title,
+      message,
+      snackPosition: SnackPosition.BOTTOM,
+      duration: const Duration(seconds: 3),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Stack(
-        children: [
-          // Map Layer (Background)
-          SizedBox.expand(
-            child: GoogleMap(
-              onMapCreated: _onMapCreated,
-              initialCameraPosition: CameraPosition(
+      body: SizedBox(
+        width: MediaQuery.of(context).size.width,
+        height: MediaQuery.of(context).size.height,
+        child: Stack(
+          children: [
+            GoogleMap(
+              onMapCreated: (controller) {
+                _mapController = controller;
+                _isMapReady = true;
+                if (_itemController.items.isNotEmpty) _updateMapMarkers();
+              },
+              initialCameraPosition: const CameraPosition(
                 target: LatLng(37.42796133580664, -122.085749655962),
-                zoom: 14.4746,
+                zoom: 12.0,
               ),
               myLocationEnabled: true,
               myLocationButtonEnabled: false,
+              markers: _markers,
+              minMaxZoomPreference: const MinMaxZoomPreference(10, 18),
             ),
-          ),
-
-          // Top Layer (Search Bar and Categories)
-          Positioned(
-            top: MediaQuery.of(context).padding.top + 16,
-            left: 16,
-            right: 16,
-            child: Column(
-              children: [
-                // Categories Section
-                _buildCategoriesSection(),
-              ],
+            Positioned(
+              top: MediaQuery.of(context).padding.top + 16,
+              left: 16,
+              right: 16,
+              child: Column(
+                children: [
+                  _buildCategoriesSection(),
+                  const SizedBox(height: 16),
+                ],
+              ),
             ),
-          ),
-
-          // Find Me Button
-          Positioned(
-            right: 10,
-            bottom: 106,
-            child: FloatingActionButton(
-              onPressed: _findMyLocation,
-              backgroundColor: Colors.white,
-              tooltip: 'Find My Location',
-              child: Icon(Icons.my_location),
+            Positioned(
+              right: 16,
+              bottom: 100,
+              child: FloatingActionButton(
+                onPressed: _findMyLocation,
+                mini: true,
+                backgroundColor: Colors.white,
+                child: const Icon(Icons.my_location, color: Colors.blue),
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
 
   Widget _buildCategoriesSection() {
     return Obx(() {
-      if (categoryController.categoryLoading.value) {
+      if (_categoryController.categoryLoading.value)
         return _buildCategoryShimmer();
-      }
-
-      if (categoryController.categories.isEmpty) {
+      if (_categoryController.categories.isEmpty)
         return _buildNoCategoriesFound();
-      }
-
       return _buildCategoryList();
     });
   }
 
   Widget _buildCategoryShimmer() {
-    return Container(
-      height: 120,
-      margin: const EdgeInsets.only(top: 16),
+    return SizedBox(
+      height: 70,
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
         itemCount: 5,
-        itemBuilder: (context, index) => Container(
-          width: 100,
-          margin: const EdgeInsets.only(right: 8),
-          child: const EShimmerEffect(width: 80, height: 80, radius: 8),
+        itemBuilder: (context, index) => Padding(
+          padding: const EdgeInsets.only(right: 8),
+          child: EShimmerEffect(width: 80, height: 60, radius: 8),
         ),
       ),
     );
   }
 
   Widget _buildNoCategoriesFound() {
-    return Container(
+    return const SizedBox(
       height: 60,
-      alignment: Alignment.center,
-      child: const Text(
-        'No categories found',
-        style: TextStyle(color: Colors.grey),
+      child: Center(
+        child:
+            Text('No categories found', style: TextStyle(color: Colors.grey)),
       ),
     );
   }
 
   Widget _buildCategoryList() {
-    return Container(
+    return SizedBox(
       height: 70,
-      margin: const EdgeInsets.only(top: 16),
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
-        itemCount: categoryController.categories.length,
-        itemBuilder: (context, index) {
-          final category = categoryController.categories[index];
-          return Container(
-            width: 90,
-            margin: const EdgeInsets.only(right: 8),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(8),
-              boxShadow: const [
-                BoxShadow(
-                  color: Colors.black12,
-                  blurRadius: 4,
-                  offset: Offset(0, 2),
-                ),
-              ],
-            ),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                _buildCategoryImage(category),
-                const SizedBox(height: 4),
-                _buildCategoryName(category.name),
-              ],
-            ),
-          );
-        },
+        itemCount: _categoryController.categories.length,
+        itemBuilder: (context, index) =>
+            _buildCategoryItem(_categoryController.categories[index]),
+      ),
+    );
+  }
+
+  Widget _buildCategoryItem(Category category) {
+    return GestureDetector(
+      onTap: () => _handleCategorySelection(category.id),
+      child: Container(
+        width: 80,
+        margin: const EdgeInsets.only(right: 8),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(8),
+          boxShadow: const [
+            BoxShadow(
+                color: Colors.black12, blurRadius: 4, offset: Offset(0, 2)),
+          ],
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            _buildCategoryImage(category),
+            const SizedBox(height: 4),
+            _buildCategoryName(category.name),
+          ],
+        ),
       ),
     );
   }
 
   Widget _buildCategoryImage(Category category) {
     return ClipRRect(
-      borderRadius: BorderRadius.circular(8),
+      borderRadius: BorderRadius.circular(4),
       child: Image.network(
         category.log.isNotEmpty ? category.log : EImages.user1,
-        width: 40,
-        height: 40,
+        width: 32,
+        height: 32,
         fit: BoxFit.cover,
         errorBuilder: (context, error, stackTrace) =>
-            const Icon(Icons.error, size: 40),
+            const Icon(Icons.error, size: 32),
         loadingBuilder: (context, child, loadingProgress) {
           if (loadingProgress == null) return child;
-          return CircularProgressIndicator(
-            value: loadingProgress.expectedTotalBytes != null
-                ? loadingProgress.cumulativeBytesLoaded /
-                    loadingProgress.expectedTotalBytes!
-                : null,
+          return const SizedBox(
+            width: 32,
+            height: 32,
+            child: Center(child: CircularProgressIndicator()),
           );
         },
       ),
@@ -434,53 +465,10 @@ class _MapScreenState extends State<MapScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 4),
       child: Text(
         name,
-        style: const TextStyle(
-          fontSize: 12,
-          fontWeight: FontWeight.w500,
-        ),
+        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
       ),
     );
   }
-
-  Widget _buildItemsLoadingIndicator() {
-    return Obx(() {
-      if (itemController.itemLoading.value) {
-        return const Positioned(
-          top: 100,
-          left: 0,
-          right: 0,
-          child: Center(child: CircularProgressIndicator()),
-        );
-      }
-      return const SizedBox.shrink();
-    });
-  }
-
-  Widget _buildItemMarkers() {
-    return Obx(() {
-      if (itemController.errorMessage.value.isNotEmpty) {
-        return Positioned(
-          top: 100,
-          left: 0,
-          right: 0,
-          child: Center(
-            child: Text(
-              itemController.errorMessage.value,
-              style: const TextStyle(color: Colors.red),
-            ),
-          ),
-        );
-      }
-      return const SizedBox.shrink();
-    });
-  }
-}
-
-class MapCategory {
-  final IconData icon;
-  final String name;
-
-  MapCategory(this.icon, this.name);
 }

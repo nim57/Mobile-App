@@ -57,5 +57,11 @@ class EValidator {
     }
     return null;
   }
+  
+  bool isValidLocation(String location) {
+  final regex = RegExp(r'^-?\d+(\.\d+)?,-?\d+(\.\d+)?$');
+  return regex.hasMatch(location);
+}
+
 // Add more custom validators as needed for your specific requirements.
 }
