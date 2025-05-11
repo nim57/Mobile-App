@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:echo_project_123/Home_sereens/item_review_summry/item_review_summary_model.dart';
@@ -52,6 +53,7 @@ class ItemController extends GetxController {
     fetchCategories();
     fetchAllItems();
     _setupWorkers();
+     _scheduleDailyUpdate();
   }
 
   void _setupWorkers() {
@@ -449,6 +451,16 @@ Future<Item> getItemById(String itemId) async {
   }
 }
 
+void _scheduleDailyUpdate() {
+  Timer.periodic(const Duration(minutes: 1), (timer) {
+    final now = DateTime.now();
+    if (now.hour == 23 && now.minute == 55) {
+      if (!allItemsLoading.value) {
+        updateAllItemsReviewSummary();
+      }
+    }
+  });
+}
 
 
 }

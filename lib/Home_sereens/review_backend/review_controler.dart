@@ -3,6 +3,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../authentication_files/common/widgets/loaders/lodaders.dart';
+import '../badge_system/badge_model.dart';
+import '../badge_system/badge_repository.dart';
 import '../item_backend/item_controller.dart';
 import '../item_review_summry/item_review_repository.dart';
 import '../item_review_summry/item_review_summary_model.dart';
@@ -31,7 +33,6 @@ class ReviewController extends GetxController {
   static ReviewController get instance => Get.find();
 
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-
   final ReviewRepository _repository = ReviewRepository();
   final RxMap<String, double> ratings = <String, double>{}.obs;
   final RxList<ReviewModel> reviews = <ReviewModel>[].obs;
@@ -590,6 +591,7 @@ Future<Map<String, dynamic>> calculateReviewMetrics(String itemId) async {
     return {
       'quinceUsersCount': userReviews.length,
       'reviewPoints': reviewPoints,
+      'totalReviews': reviews.docs.length,
     };
   } catch (e) {
     Get.log('Review metric calculation error: $e');
@@ -1031,6 +1033,22 @@ final categoryCriteriaa = {
       );
 
       await ItemReviewRepository().createOrUpdateSummary(summary);
+
+
+      // Create/Update Badge
+    final badge = Badge_item(
+      itemId: itemId,
+      itemName: item.name,
+      categoryId: item.categoryId,
+      mapLocation: item.mapLocation,
+      quinceUsersCount: metrics['quinceUsersCount'] as int,
+      totalReviews: metrics['totalReviews'] as int,
+      reviewPoints: metrics['reviewPoints'] as Map<String, double>,
+      badReviewPercentage: 0.0,
+      lastUpdated: DateTime.now(),
+    );
+    await BadgeRepository().createOrUpdateBadge(badge);
+    
     } catch (e) {
       Get.log('Failed to update summary for $itemId: $e');
       Get.snackbar(
