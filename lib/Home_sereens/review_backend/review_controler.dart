@@ -38,8 +38,7 @@ class ReviewController extends GetxController {
   final ReplyRepository _replyRepository = ReplyRepository();
   final RxMap<String, double> averageRatings = <String, double>{}.obs;
   final RxList<String> currentCriteria = <String>[].obs;
-  final ItemReviewRepository _reviewSummaryRepo = ItemReviewRepository.instance;
-  final ItemController _itemController = ItemController.instance;
+  final ItemController _itemController = Get.find<ItemController>();
   final Debounce _debounce = Debounce(const Duration(seconds: 5));
   final RxString currentItemId = ''.obs;
   final RxBool isLoading = false.obs;
@@ -372,7 +371,6 @@ class ReviewController extends GetxController {
 
       _repository.getReviewsByItem(itemId).listen((reviewsList) {
         reviews.value = reviewsList;
-        _calculateAverageRatings();
         print('Reviews for $itemId:');
         for (var r in reviewsList) {
           print(r.ratings);
@@ -536,92 +534,508 @@ class ReviewController extends GetxController {
     ratings.value = Map.from(review.ratings);
   }
 
-// In ReviewController.dart
-  void _calculateAverageRatings() {
-    final newAverages = <String, double>{};
-    final uniqueReviews = _removeDuplicateReviews(reviews);
+// Add to ReviewController
+  // review_controller.dart (partial update)
+ // review_controller.dart (updated)
+Future<Map<String, dynamic>> calculateReviewMetrics(String itemId) async {
+  try {
+    // Get all reviews for the item
+    final reviews = await _firestore.collection('reviews')
+        .where('itemId', isEqualTo: itemId)
+        .get();
 
-    for (final criterion in currentCriteria) {
-      double total = 0.0;
-      int totalReviews = uniqueReviews.length;
-
-      for (final review in uniqueReviews) {
-        total += review.ratings[criterion] ?? 0.0;
-      }
-
-      newAverages[criterion] =
-          totalReviews > 0 ? (total / totalReviews) : 0.0;
-    }
-
-    averageRatings.assignAll(newAverages);
-    _debounce.run(_saveReviewSummary);
-  }
-
-  List<ReviewModel> _removeDuplicateReviews(List<ReviewModel> reviews) {
-    final Map<String, ReviewModel> latestReviews = {};
-    for (final review in reviews) {
-      final existing = latestReviews[review.userId];
-      if (existing == null ||
+    // Get latest review per user
+    final userReviews = <String, ReviewModel>{};
+    for (final doc in reviews.docs) {
+      final review = ReviewModel.fromSnapshot(doc);
+      final existing = userReviews[review.userId];
+      if (existing == null || 
           review.timestamp.compareTo(existing.timestamp) > 0) {
-        latestReviews[review.userId] = review;
+        userReviews[review.userId] = review;
       }
     }
-    return latestReviews.values.toList();
-  }
-  //_calculateAverageRatings()
 
-  @override
-  void onClose() {
-    _debounce.dispose();
-    super.onClose();
-  }
+    // Get item and category data
+    final item = await _itemController.getItemById(itemId);
+    final category = await _firestore.collection('categories')
+        .doc(item.categoryId)
+        .get();
 
-  Future<void> _saveReviewSummary() async {
-    try {
-      if (currentItemId.value.isEmpty || categoryName.value.isEmpty) return;
+    // Validate category exists
+    if (!category.exists) {
+      throw 'Associated category not found';
+    }
 
-      // 1. Verify item existence first
-      final item =
-          await _itemController.itemRepository.getItemById(currentItemId.value);
-      if (item.id.isEmpty) {
-        throw 'Item not found in database';
-      }
+    // Get category data and criteria
+    final categoryData = category.data()!;
+    final criteria = _getCriteriaForCategory(item.categoryId, categoryData);
 
-      // 2. Create document reference with explicit path
-      final summary = ItemReviewSummary(
-        itemId: currentItemId.value,
-        categoryId: item.categoryId,
-        itemName: item.name,
-        totalReviews: reviews.length,
-        reviewPoints: averageRatings.value,
-        lastUpdated: Timestamp.now(),
-      );
+    // Calculate review points
+    final reviewPoints = <String, double>{};
+    for (final criterion in criteria) {
+      double total = 0.0;
+      int count = 0;
 
-      // 3. Use transaction for atomic write
-      await _firestore.runTransaction((transaction) async {
-        final docRef = _firestore.collection('itemReviews').doc(summary.itemId);
-        transaction.set(docRef, summary.toFirestore(), SetOptions(merge: true));
+      userReviews.values.forEach((review) {
+        final rating = review.ratings[criterion];
+        if (rating != null) {
+          total += rating;
+          count++;
+        }
       });
 
-      print('Successfully saved review summary for ${item.name}');
-    } on FirebaseException catch (e) {
-      print('Firestore Error: ${e.code} - ${e.message}');
-      ELoaders.errorsnackBar(
-          title: 'Save Failed', message: _getErrorMessage(e.code));
-    } catch (e) {
-      print('General Error: $e');
-      ELoaders.errorsnackBar(title: 'Save Failed', message: e.toString());
+      reviewPoints[criterion] = count > 0 ? (total / count) : 0.0;
     }
+
+    return {
+      'quinceUsersCount': userReviews.length,
+      'reviewPoints': reviewPoints,
+    };
+  } catch (e) {
+    Get.log('Review metric calculation error: $e');
+    throw 'Calculation failed: ${e.toString()}';
+  }
+}
+
+List<String> _getCriteriaForCategory(String categoryId, Map<String, dynamic> categoryData) {
+  // First check local categoryCriteriaa by category ID
+  if (categoryCriteriaa.containsKey(categoryId)) {
+    return categoryCriteriaa[categoryId]!;
   }
 
-  String _getErrorMessage(String code) {
-    switch (code) {
-      case 'not-found':
-        return 'The item document was not found. Please refresh and try again.';
-      case 'permission-denied':
-        return 'You don\'t have permission to perform this action.';
-      default:
-        return 'An unexpected error occurred. Please try again.';
+  // Then check Firestore's 'criteria' field
+  if (categoryData.containsKey('criteria')) {
+    return List<String>.from(categoryData['criteria']);
+  }
+
+  // Fallback to category name in categoryCriteriaa
+  final categoryName = categoryData['name'] as String;
+  if (categoryCriteriaa.containsKey(categoryName)) {
+    return categoryCriteriaa[categoryName]!;
+  }
+
+  throw 'No criteria found for category $categoryId ($categoryName)';
+}
+
+final categoryCriteriaa = {
+  // Using category IDs as keys
+   // Mobile Repair Services
+  "0001": [
+    "Repair Quality",
+    "Turnaround Time",
+    "Technician Expertise",
+    "Cost Transparency",
+    "Warranty on Repairs"
+  ],
+  
+  // Spice Packaging & Export Shops
+  "0002": [
+    "Product Freshness",
+    "Packaging Quality",
+    "Pricing Competitiveness",
+    "Shipping Reliability",
+    "Customer Service"
+  ],
+
+  // Tuk-Tuk Rental Services
+  "0005": [
+    "Vehicle Condition",
+    "Rental Pricing Transparency",
+    "Customer Support",
+    "Availability of Vehicles",
+    "Safety Features"
+  ],
+
+  // Sustainable Eco-Tourism Agencies
+  "0006": [
+    "Guide Knowledge",
+    "Eco-Friendliness of Activities",
+    "Itinerary Satisfaction",
+    "Safety Measures",
+    "Value for Money"
+  ],
+
+  // Online Tutoring Platforms
+  "0007": [
+    "Tutor Expertise",
+    "Platform Usability",
+    "Session Flexibility",
+    "Course Relevance",
+    "Technical Support"
+  ],
+
+  // E-Commerce Stores (Handicrafts, Apparel, Electronics)
+  "0008": [
+    "Website/App Usability",
+    "Delivery Speed",
+    "Product Accuracy (vs. Description)",
+    "Return/Refund Process",
+    "Payment Security"
+  ],
+
+  // Customized Travel Planners
+  "0009": [
+    "Personalization of Itinerary",
+    "Communication Responsiveness",
+    "Budget Adherence",
+    "Local Experience Quality",
+    "Emergency Support"
+  ],
+
+  // Agriculture Tech Providers
+  "0010": [
+    "IoT Device Reliability",
+    "Technical Support",
+    "Value for Money",
+    "Training Provided",
+    "Impact on Farm Yield"
+  ],
+
+  // Banks & Financial Institutions
+  "0011": [
+    "Transaction Speed",
+    "Staff Professionalism",
+    "Digital Banking Features",
+    "Loan Approval Process",
+    "Fee Transparency"
+  ],
+
+  // Handicraft Stores
+  "0012": [
+    "Product Authenticity",
+    "Craftsmanship Quality",
+    "Pricing Fairness",
+    "Store Ambiance",
+    "Seller Knowledge"
+  ],
+
+  // Tea Retailers
+  "0013": [
+    "Tea Freshness",
+    "Packaging Appeal",
+    "Variety of Blends",
+    "Staff Recommendations",
+    "Brand Reputation"
+  ],
+
+  // Furniture Outlets
+  "0014": [
+    "Durability of Products",
+    "Customization Options",
+    "Delivery & Assembly Service",
+    "Price vs. Quality",
+    "After-Sales Support"
+  ],
+
+  // Designer Boutiques
+  "0015": [
+    "Design Uniqueness",
+    "Fabric Quality",
+    "Fit & Sizing Accuracy",
+    "Staff Styling Advice",
+    "Luxury Experience"
+  ],
+
+  // Art Galleries
+  "0016": [
+    "Artwork Authenticity",
+    "Curation Quality",
+    "Pricing Transparency",
+    "Artist Interaction Opportunities",
+    "Ambiance & Lighting"
+  ],
+
+  // Spice Markets
+  "0017": [
+    "Spice Authenticity",
+    "Vendor Knowledge",
+    "Bargaining Fairness",
+    "Cleanliness of Stalls",
+    "Freshness of Products"
+  ],
+
+  // Antique Shops
+  "0018": [
+    "Item Authenticity",
+    "Historical Documentation",
+    "Pricing Justification",
+    "Restoration Services",
+    "Staff Expertise"
+  ],
+
+  // Supermarkets
+  "0019": [
+    "Product Variety",
+    "Checkout Speed",
+    "Staff Helpfulness",
+    "Cleanliness",
+    "Loyalty Program Benefits"
+  ],
+
+  // Digital Marketing Agencies
+  "0020": [
+    "Campaign Effectiveness",
+    "Reporting Clarity",
+    "Creativity of Content",
+    "Communication Responsiveness",
+    "ROI Delivered"
+  ],
+
+  // Freelancing Platforms
+  "0021": [
+    "Job Matching Accuracy",
+    "Payment Security",
+    "Client Review Authenticity",
+    "Platform Fees Fairness",
+    "Dispute Resolution"
+  ],
+
+  // Social Media Management Services
+  "0022": [
+    "Content Engagement Rates",
+    "Posting Consistency",
+    "Creativity of Strategy",
+    "Analytics Reporting",
+    "Client Collaboration"
+  ],
+
+  // Podcast Production Studios
+  "0023": [
+    "Audio Quality",
+    "Editing Precision",
+    "Host Guidance",
+    "Turnaround Time",
+    "Equipment Modernity"
+  ],
+
+  // Restaurants & Cafés
+  "0024": [
+    "Food Taste & Presentation",
+    "Hygiene Standards",
+    "Service Speed",
+    "Ambiance",
+    "Value for Money"
+  ],
+
+  // Interior Redesign Services
+  "0025": [
+    "Space Utilization Creativity",
+    "Budget Adherence",
+    "Client Consultation Quality",
+    "Project Timeliness",
+    "Sustainability of Materials"
+  ],
+
+  // Dropshipping Businesses
+  "0026": [
+    "Product Sourcing Reliability",
+    "Shipping Time",
+    "Customer Complaint Handling",
+    "Profit Margins",
+    "Supplier Communication"
+  ],
+
+  // Courier Services
+  "0027": [
+    "Delivery Timeliness",
+    "Parcel Condition",
+    "Tracking Accuracy",
+    "Customer Support",
+    "Pricing Transparency"
+  ],
+
+  // Insurance Providers
+  "0028": [
+    "Claim Processing Speed",
+    "Policy Clarity",
+    "Agent Support",
+    "Coverage Flexibility",
+    "Premium Fairness"
+  ],
+
+  // Telecom Services
+  "0029": [
+    "Network Reliability",
+    "Data Speed",
+    "Billing Transparency",
+    "Customer Service",
+    "Promotional Offers"
+  ],
+
+  // TV & Streaming Services
+  "0030": [
+    "Content Variety",
+    "Streaming Quality",
+    "Subscription Pricing",
+    "User Interface",
+    "Customer Support"
+  ],
+
+  // Vehicle Garages
+  "0031": [
+    "Repair Durability",
+    "Cost Transparency",
+    "Mechanic Expertise",
+    "Parts Availability",
+    "Cleanliness of Facility"
+  ],
+
+  // Salons & Beauty Parlors
+  "0032": [
+    "Service Hygiene",
+    "Staff Skill Level",
+    "Product Quality Used",
+    "Wait Time Management",
+    "Longevity of Results"
+  ],
+
+  // Grocery Stores
+  "0033": [
+    "Stock Freshness",
+    "Pricing Competitiveness",
+    "Checkout Efficiency",
+    "Staff Friendliness",
+    "Ease of Navigation"
+  ],
+
+  // Phone & Laptop Retailers
+  "0034": [
+    "Product Authenticity (Genuine Brands)",
+    "Warranty Clarity",
+    "After-Sales Support",
+    "Pricing vs. Market Rates",
+    "Demo & Testing Facilities"
+  ],
+
+  // Furniture Shops
+  "0035": [
+    "Assembly Ease",
+    "Material Quality",
+    "Design Modernity",
+    "Delivery Punctuality",
+    "Customization Options"
+  ],
+
+  // Technical Repair Shops
+  "0036": [
+    "Diagnostic Accuracy",
+    "Repair Cost Fairness",
+    "Replacement Part Quality",
+    "Technician Communication",
+    "Service Warranty"
+  ],
+
+  // Transport Services (Ride-Hailing, Bus/Train)
+  "0037": [
+    "Driver/Rider Behavior",
+    "Vehicle Cleanliness",
+    "Fare Accuracy",
+    "Booking App Reliability",
+    "Safety Features"
+  ],
+
+  // Ayurvedic & Herbal Stores
+  "0038": [
+    "Product Purity",
+    "Staff Knowledge",
+    "Packaging Sustainability",
+    "Effectiveness of Remedies",
+    "Price vs. Benefits"
+  ],
+
+  // Gems & Jewellery Shops
+  "0039": [
+    "Gem Certification Authenticity",
+    "Design Uniqueness",
+    "Pricing Transparency",
+    "Customization Services",
+    "After-Purchase Cleaning/Polishing"
+  ],
+
+  // Bookstores
+  "0040": [
+    "Book Variety",
+    "Staff Recommendations",
+    "Seating/Reading Areas",
+    "Event Hosting Quality",
+    "Loyalty Discounts"
+  ],
+
+  // Floral Shops
+  "0041": [
+    "Flower Freshness",
+    "Arrangement Creativity",
+    "Delivery Timeliness",
+    "Pricing Fairness",
+    "Seasonal Variety"
+  ],
+
+  // Fitness Centers
+  "0042": [
+    "Equipment Maintenance",
+    "Trainer Expertise",
+    "Cleanliness",
+    "Class Variety",
+    "Membership Value"
+  ],
+
+  // Boat-Building Workshops
+  "0043": [
+    "Craftsmanship Quality",
+    "Material Durability",
+    "Project Timeliness",
+    "Cost Estimation Accuracy",
+    "Custom Design Support"
+  ],
+
+  // Coconut Product Exporters
+  "0044": [
+    "Product Purity",
+    "Eco-Friendly Packaging",
+    "Export Documentation Support",
+    "Bulk Order Discounts",
+    "Supplier Reliability"
+  ],
+
+  // 3D Printing Studios
+  "0045": [
+    "Print Accuracy",
+    "Material Options",
+    "Turnaround Time",
+    "Cost per Project",
+    "Design Consultation"
+  ],
+
+  // EV Charging Stations
+  "0046": [
+    "Charging Speed",
+    "Station Availability",
+    "Payment Method Flexibility",
+    "Safety Standards",
+    "App Integration for Reservations"
+  ]
+};
+
+  Future<void> updateItemReviewSummary(String itemId) async {
+    try {
+      final metrics = await calculateReviewMetrics(itemId);
+      final item = await _itemController.getItemById(itemId);
+
+      final summary = ItemReviewSummary(
+        itemId: itemId,
+        itemName: item.name,
+        categoryId: item.categoryId,
+        quinceUsersCount: metrics['quinceUsersCount'] as int,
+        reviewPoints: metrics['reviewPoints'] as Map<String, double>,
+        lastUpdated: DateTime.now(),
+      );
+
+      await ItemReviewRepository().createOrUpdateSummary(summary);
+    } catch (e) {
+      Get.log('Failed to update summary for $itemId: $e');
+      Get.snackbar(
+          'Update Failed', 'Could not calculate metrics: ${e.toString()}');
+      rethrow;
     }
   }
 }

@@ -4,7 +4,6 @@ import 'package:get/get.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:echo_project_123/Utils/constants/image_Strings.dart';
 import 'package:echo_project_123/authentication_files/featuers/personalization/user_controller.dart';
-import 'package:echo_project_123/common/widgets/appbar/appbar.dart';
 import 'package:echo_project_123/Home_sereens/widgets/shimmer.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'dart:math' as math;
@@ -180,8 +179,9 @@ class _MapScreenState extends State<MapScreen> {
 
   void _moveCameraToPosition(Position position) {
     if (!_isMapReady || _mapController == null) return;
-    if (DateTime.now().difference(_lastCameraUpdate).inMilliseconds < 500)
+    if (DateTime.now().difference(_lastCameraUpdate).inMilliseconds < 500) {
       return;
+    }
 
     _lastCameraUpdate = DateTime.now();
     _mapController?.animateCamera(
@@ -243,8 +243,9 @@ class _MapScreenState extends State<MapScreen> {
         final uri = Uri.parse(location);
         final query = uri.queryParameters['q'] ?? '';
         final coords = query.split(',').take(2).toList();
-        if (coords.length != 2)
+        if (coords.length != 2) {
           throw const FormatException('Invalid URL coordinates');
+        }
         return LatLng(
           double.parse(coords[0].trim()),
           double.parse(coords[1].trim()),
@@ -252,8 +253,9 @@ class _MapScreenState extends State<MapScreen> {
       }
 
       final coords = location.split(',').take(2).toList();
-      if (coords.length != 2)
+      if (coords.length != 2) {
         throw const FormatException('Invalid coordinate format');
+      }
       return LatLng(
         double.parse(coords[0].trim()),
         double.parse(coords[1].trim()),
@@ -368,10 +370,12 @@ class _MapScreenState extends State<MapScreen> {
 
   Widget _buildCategoriesSection() {
     return Obx(() {
-      if (_categoryController.categoryLoading.value)
+      if (_categoryController.categoryLoading.value) {
         return _buildCategoryShimmer();
-      if (_categoryController.categories.isEmpty)
+      }
+      if (_categoryController.categories.isEmpty) {
         return _buildNoCategoriesFound();
+      }
       return _buildCategoryList();
     });
   }

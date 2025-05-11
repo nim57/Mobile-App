@@ -9,6 +9,7 @@ import '../../../../../Utils/constants/image_Strings.dart';
 import '../../../../../Utils/popups/fullscreen_loader.dart';
 import '../../authentication_files/common/widgets/loaders/lodaders.dart';
 import '../item_review_summry/item_review_repository.dart';
+import '../review_backend/review_controler.dart';
 import 'item_model.dart';
 import 'item_repository.dart';
 
@@ -18,6 +19,7 @@ class ItemController extends GetxController {
   // Repositories & Services
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final itemRepository = Get.put(ItemRepository());
+  final ItemReviewRepository _reviewRepo = ItemReviewRepository();
 
   // Observables
   final itemLoading = false.obs;
@@ -404,12 +406,49 @@ class ItemController extends GetxController {
     }
   }
 
-  Future<ItemReviewSummary?> getReviewSummary(String itemId) async {
-    try {
-      return await ItemReviewRepository.instance.getSummaryByItem(itemId);
-    } catch (e) {
-      print('Error getting review summary: $e');
-      return null;
-    }
+  Future<void> updateReviewSummary(String itemId) async {
+  try {
+    EFullScreenLoader.openLoadingDialog('Updating Metrics...', EImages.E);
+    await Get.find<ReviewController>().updateItemReviewSummary(itemId);
+    
+  } finally {
+    EFullScreenLoader.stopLoading();
   }
+}
+// Inside ItemController
+final RxBool allItemsLoading = false.obs;
+
+Future<void> updateAllItemsReviewSummary() async {
+  try {
+    allItemsLoading(true);
+    EFullScreenLoader.openLoadingDialog('Updating All Items...', EImages.E);
+    
+    final items = await itemRepository.getAllItems();
+    final reviewController = Get.find<ReviewController>();
+    
+    for (final item in items) {
+      await reviewController.updateItemReviewSummary(item.id);
+      await Future.delayed(const Duration(milliseconds: 100));
+    }
+    
+    Get.snackbar('Success', 'All items updated successfully!');
+  } catch (e) {
+    Get.snackbar('Error', e.toString());
+  } finally {
+    allItemsLoading(false);
+    EFullScreenLoader.stopLoading();
+  }
+}
+
+// Add to ItemController class
+Future<Item> getItemById(String itemId) async {
+  try {
+    return await itemRepository.getItemById(itemId);
+  } catch (e) {
+    throw 'Failed to get item: ${e.toString()}';
+  }
+}
+
+
+
 }

@@ -5,6 +5,8 @@ import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:get/get_core/src/get_main.dart';
 import 'package:get/get_instance/src/extension_instance.dart';
 import 'package:get_storage/get_storage.dart';
+import 'Home_sereens/item_backend/item_controller.dart';
+import 'Home_sereens/review_backend/review_controler.dart';
 import 'app.dart';
 import 'firebase_options.dart';
 
@@ -16,13 +18,20 @@ Future<void> main() async {
   // Todo: init local Storage
   await GetStorage.init();
 
+  
+  // Then register ReviewController
+  Get.lazyPut(() => ReviewController());
+  
+
   // Add global error handler
   FlutterError.onError = (details) {
     if (details.exception.toString().contains('cloud_firestore')) {
       // Handle Firestore errors globally
     }
   };
-
+  
+ 
+  
   // -- Awate Splash unitl others items Load
   FlutterNativeSplash.preserve(widgetsBinding: widgetsBinding);
 
