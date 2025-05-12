@@ -11,6 +11,8 @@ class Badge_item {
   final Map<String, double> reviewPoints;
   final double badReviewPercentage;
   final DateTime lastUpdated;
+  final String badgeName;       // New field
+  final String badgeImageUrl;   // New field
 
   Badge_item({
     required this.itemId,
@@ -22,21 +24,29 @@ class Badge_item {
     required this.reviewPoints,
     required this.badReviewPercentage,
     required this.lastUpdated,
+    this.badgeName = 'Registered Shop',  // Default value
+    this.badgeImageUrl = 'https://example.com/default_badge.png', // Default image
   });
 
   factory Badge_item.fromFirestore(DocumentSnapshot doc) {
-    final data = doc.data() as Map<String, dynamic>;
-    return Badge_item(
-      itemId: doc.id,
-      itemName: data['itemName'] ?? '',
-      categoryId: data['categoryId'] ?? '',
-      mapLocation: data['mapLocation'] ?? '',
-      quinceUsersCount: data['quinceUsersCount'] ?? 0,
-      totalReviews: data['totalReviews'] ?? 0,
-      reviewPoints: Map<String, double>.from(data['reviewPoints'] ?? {}),
-      badReviewPercentage: (data['badReviewPercentage'] ?? 0.0).toDouble(),
-      lastUpdated: (data['lastUpdated'] as Timestamp).toDate(),
-    );
+    try {
+      final data = doc.data() as Map<String, dynamic>;
+      return Badge_item(
+        itemId: doc.id,
+        itemName: data['itemName'] ?? '',
+        categoryId: data['categoryId'] ?? '',
+        mapLocation: data['mapLocation'] ?? '',
+        quinceUsersCount: data['quinceUsersCount'] ?? 0,
+        totalReviews: data['totalReviews'] ?? 0,
+        reviewPoints: Map<String, double>.from(data['reviewPoints'] ?? {}),
+        badReviewPercentage: (data['badReviewPercentage'] ?? 0.0).toDouble(),
+        lastUpdated: (data['lastUpdated'] as Timestamp).toDate(),
+        badgeName: data['badgeName'] ?? 'Registered Shop',
+        badgeImageUrl: data['badgeImageUrl'] ?? 'https://example.com/default_badge.png',
+      );
+    } catch (e) {
+      throw FormatException('Error parsing Badge_item: ${e.toString()}');
+    }
   }
 
   Map<String, dynamic> toFirestore() {
@@ -49,6 +59,8 @@ class Badge_item {
       'reviewPoints': reviewPoints,
       'badReviewPercentage': badReviewPercentage,
       'lastUpdated': Timestamp.fromDate(lastUpdated),
+      'badgeName': badgeName,
+      'badgeImageUrl': badgeImageUrl,
     };
   }
 }

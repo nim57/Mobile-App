@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../Utils/constants/colors.dart';
 import '../../common/widgets/appbar/appbar.dart';
-import '../badge_system/manual_update_button.dart';
 import '../item_backend/item_controller.dart';
 import '../item_backend/item_model.dart';
 import '../review_backend/review_controler.dart';
@@ -69,7 +68,20 @@ class ItemDetailScreen extends StatelessWidget {
               const SizedBox(height: 16),
               Padding(
                 padding: const EdgeInsets.all(28.0),
-                child: DynamicRatingBar(),
+                child: Obx(() {
+                  if (reviewController.isLoading.value) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
+                  if (reviewController.errorMessage.value.isNotEmpty) {
+                    return Text(reviewController.errorMessage.value);
+                  }
+                  if (reviewController.selectedSummary.value == null) {
+                    return const Text('No reviews available');
+                  }
+                  return RatingBarWidget(
+                    reviewPoints: reviewController.selectedSummary.value!.reviewPoints,
+                  );
+                }),
               ),
               const SizedBox(height: 16),
               _buildTitleSection(item, controller),

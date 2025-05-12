@@ -2,7 +2,6 @@ import 'dart:async'; // Keep this as the only async-related import
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '../../authentication_files/common/widgets/loaders/lodaders.dart';
 import '../badge_system/badge_model.dart';
 import '../badge_system/badge_repository.dart';
 import '../item_backend/item_controller.dart';
@@ -33,6 +32,7 @@ class ReviewController extends GetxController {
   static ReviewController get instance => Get.find();
 
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+   final Rx<ItemReviewSummary?> selectedSummary = Rx<ItemReviewSummary?>(null);
   final ReviewRepository _repository = ReviewRepository();
   final RxMap<String, double> ratings = <String, double>{}.obs;
   final RxList<ReviewModel> reviews = <ReviewModel>[].obs;
@@ -42,6 +42,7 @@ class ReviewController extends GetxController {
   final ItemController _itemController = Get.find<ItemController>();
   final Debounce _debounce = Debounce(const Duration(seconds: 5));
   final RxString currentItemId = ''.obs;
+  final _itemrepository = ItemReviewRepository();
   final RxBool isLoading = false.obs;
   final RxString errorMessage = ''.obs;
   final RxString categoryName = ''.obs;
@@ -369,6 +370,13 @@ class ReviewController extends GetxController {
       errorMessage('');
 
       currentCriteria.value = categoryCriteria[categoryName] ?? [];
+      // Load summary data
+      selectedSummary.value = await _itemrepository.getSummaryByItem(itemId);
+       
+        if (selectedSummary.value == null) {
+        errorMessage.value = 'No review data available'; // Set error message
+      }
+      
 
       _repository.getReviewsByItem(itemId).listen((reviewsList) {
         reviews.value = reviewsList;
@@ -391,6 +399,8 @@ class ReviewController extends GetxController {
       itemName.value = await _repository.getItemName(itemId);
 
       reviews.bindStream(_repository.getReviewsByItem(itemId));
+
+      
     } on FirebaseException catch (e) {
       errorMessage.value = 'Firebase Error: ${e.message}';
       if (e.code == 'failed-precondition') {
@@ -577,13 +587,13 @@ Future<Map<String, dynamic>> calculateReviewMetrics(String itemId) async {
       double total = 0.0;
       int count = 0;
 
-      userReviews.values.forEach((review) {
+      for (var review in userReviews.values) {
         final rating = review.ratings[criterion];
         if (rating != null) {
           total += rating;
           count++;
         }
-      });
+      }
 
       reviewPoints[criterion] = count > 0 ? (total / count) : 0.0;
     }

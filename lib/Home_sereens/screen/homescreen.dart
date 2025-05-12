@@ -59,11 +59,11 @@ class HomeScreen extends StatelessWidget {
                 bottom: const ETabBar(
                   tabs: [
                     Tab(
-                      child: Text('  Post  '),
+                      child: Text('  Reviews  '),
                     ),
                     // SizedBox(width: ESizes.spaceBtwItems),
                     Tab(
-                      child: Text('  Review  '),
+                      child: Text('  posts  '),
                     ),
                   ],
                 ),
@@ -73,8 +73,8 @@ class HomeScreen extends StatelessWidget {
           // Body
           body: const TabBarView(
             children: [
-              Following_Screen(),
               NewPost_Screen(),
+              Following_Screen(),
             ],
           ),
         ),

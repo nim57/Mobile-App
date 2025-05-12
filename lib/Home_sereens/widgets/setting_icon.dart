@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:iconsax/iconsax.dart';
 
-import '../../User_profile/screen/User_Screen.dart';
 import '../../Utils/constants/colors.dart';
 import '../../Utils/helpers/helper_function.dart';
 import '../badge_system/manual_update_button.dart';
