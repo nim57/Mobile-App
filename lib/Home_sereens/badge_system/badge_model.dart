@@ -11,8 +11,8 @@ class Badge_item {
   final Map<String, double> reviewPoints;
   final double badReviewPercentage;
   final DateTime lastUpdated;
-  final String badgeName;       // New field
-  final String badgeImageUrl;   // New field
+  final String badgeName; // New field
+  final String badgeImageUrl; // New field
 
   Badge_item({
     required this.itemId,
@@ -24,8 +24,9 @@ class Badge_item {
     required this.reviewPoints,
     required this.badReviewPercentage,
     required this.lastUpdated,
-    this.badgeName = 'Registered Shop',  // Default value
-    this.badgeImageUrl = 'https://example.com/default_badge.png', // Default image
+    this.badgeName = 'Registered Shop', // Default value
+    this.badgeImageUrl =
+        'https://firebasestorage.googleapis.com/v0/b/echo-review-system.firebasestorage.app/o/badges%2Flegend.png?alt=media&token=b82eeb72-ccfc-4041-9e83-a820dfcb61a8', // Default image
   });
 
   factory Badge_item.fromFirestore(DocumentSnapshot doc) {
@@ -42,7 +43,8 @@ class Badge_item {
         badReviewPercentage: (data['badReviewPercentage'] ?? 0.0).toDouble(),
         lastUpdated: (data['lastUpdated'] as Timestamp).toDate(),
         badgeName: data['badgeName'] ?? 'Registered Shop',
-        badgeImageUrl: data['badgeImageUrl'] ?? 'https://example.com/default_badge.png',
+        badgeImageUrl: data['badgeImageUrl'] ??
+            'https://firebasestorage.googleapis.com/v0/b/echo-review-system.firebasestorage.app/o/badges%2Flegend.png?alt=media&token=b82eeb72-ccfc-4041-9e83-a820dfcb61a8',
       );
     } catch (e) {
       throw FormatException('Error parsing Badge_item: ${e.toString()}');

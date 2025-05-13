@@ -1,7 +1,10 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../Utils/constants/colors.dart';
 import '../../common/widgets/appbar/appbar.dart';
+import '../badge_system/badge_controller.dart';
+import '../badge_system/badges_screen.dart';
 import '../item_backend/item_controller.dart';
 import '../item_backend/item_model.dart';
 import '../review_backend/review_controler.dart';
@@ -16,6 +19,7 @@ class ItemDetailScreen extends StatelessWidget {
     final ItemController controller = Get.put(ItemController());
     final ReviewController reviewController = Get.put(ReviewController());
     final String? itemId = Get.arguments as String?;
+    final BadgeController badgeController = Get.put(BadgeController());
 
     if (itemId == null) {
       return Scaffold(
@@ -27,6 +31,7 @@ class ItemDetailScreen extends StatelessWidget {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       controller.loadItemForEdit(itemId);
       controller.loadUserEngagementData(itemId);
+      badgeController.loadBadge(itemId);
     });
 
     return Scaffold(
@@ -64,7 +69,7 @@ class ItemDetailScreen extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildItemImage(item),
+              _buildImageSection(item, badgeController),
               const SizedBox(height: 16),
               Padding(
                 padding: const EdgeInsets.all(28.0),
@@ -79,7 +84,8 @@ class ItemDetailScreen extends StatelessWidget {
                     return const Text('No reviews available');
                   }
                   return RatingBarWidget(
-                    reviewPoints: reviewController.selectedSummary.value!.reviewPoints,
+                    reviewPoints:
+                        reviewController.selectedSummary.value!.reviewPoints,
                   );
                 }),
               ),
@@ -103,40 +109,6 @@ class ItemDetailScreen extends StatelessWidget {
           ),
         );
       }),
-    );
-  }
-
-  Widget _buildItemImage(Item item) {
-    final imageUrl = item.profileImage;
-    return Center(
-      child: (imageUrl.isNotEmpty)
-          ? Image.network(
-              imageUrl,
-              height: 200,
-              loadingBuilder: (context, child, loadingProgress) {
-                if (loadingProgress == null) return child;
-                return SizedBox(
-                  height: 200,
-                  child: Center(
-                    child: CircularProgressIndicator(
-                      value: loadingProgress.expectedTotalBytes != null
-                          ? loadingProgress.cumulativeBytesLoaded /
-                              loadingProgress.expectedTotalBytes!
-                          : null,
-                    ),
-                  ),
-                );
-              },
-              errorBuilder: (context, error, stackTrace) => Column(
-                children: [
-                  const Icon(Icons.error, size: 50, color: Colors.red),
-                  Text('Failed to load image',
-                      style: Get.textTheme.bodyMedium
-                          ?.copyWith(color: Colors.red)),
-                ],
-              ),
-            )
-          : const Placeholder(fallbackHeight: 200),
     );
   }
 
@@ -274,4 +246,206 @@ class ItemDetailScreen extends StatelessWidget {
       ),
     );
   }
+
+  Widget _buildImageSection(Item item, BadgeController badgeController) {
+    return Stack(
+      alignment: Alignment.bottomLeft,
+      children: [
+        // Main Item Image
+        Container(
+          height: 280,
+          width: double.infinity,
+          decoration: BoxDecoration(
+            color: Colors.grey.shade200,
+            borderRadius: const BorderRadius.only(
+              bottomLeft: Radius.circular(24),
+              bottomRight: Radius.circular(24),
+            ),
+          ),
+          child: _buildItemImage(item),
+        ),
+
+        // Badge Overlay
+        Positioned(
+          left: 16,
+          bottom: 16,
+          child: _buildBadgeSection(badgeController),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildItemImage(Item item) {
+    if (item.profileImage.isEmpty) {
+      return Center(
+        child: Icon(Icons.storefront, size: 120, color: Colors.grey.shade400),
+      );
+    }
+
+    return CachedNetworkImage(
+      imageUrl: item.profileImage,
+      imageBuilder: (context, imageProvider) => Container(
+        decoration: BoxDecoration(
+          borderRadius: const BorderRadius.only(
+            bottomLeft: Radius.circular(24),
+            bottomRight: Radius.circular(24),
+          ),
+          image: DecorationImage(
+            image: imageProvider,
+            fit: BoxFit.cover,
+          ),
+        ),
+      ),
+      placeholder: (context, url) => Center(
+        child: CircularProgressIndicator(
+          valueColor: AlwaysStoppedAnimation<Color>(EColor.primaryColor),
+        ),
+      ),
+      errorWidget: (context, url, error) => Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.error_outline, size: 40, color: Colors.red.shade400),
+            const SizedBox(height: 8),
+            Text('Failed to load image',
+                style: Get.textTheme.bodyMedium?.copyWith(color: Colors.red)),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBadgeSection(BadgeController controller) {
+    return Obx(() {
+      if (controller.isLoading.value) {
+        return _buildBadgePlaceholder();
+      }
+
+      final badge = controller.badge.value;
+      final badgeName = badge?.badgeName ?? 'Registered Shop';
+      final imageUrl = badge?.badgeImageUrl ?? _defaultBadgeUrl;
+
+      return Tooltip(
+        message: badgeName,
+        child: Container(
+          padding: const EdgeInsets.all(0),
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.9),
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.1),
+                blurRadius: 8,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: // Add this to your existing code
+              InkWell(
+            onTap: () {
+              if (badge != null) {
+                Get.to(
+                  () => BadgeDetailsScreen(
+                    badgeName: badgeName,
+                    badgeImageUrl: imageUrl,
+                  ),
+                  transition: Transition.cupertino,
+                );
+              } else {
+                Get.snackbar(
+                  'No Badge Information',
+                  'This shop has not earned any special badges yet',
+                  snackPosition: SnackPosition.BOTTOM,
+                );
+              }
+            },
+            borderRadius: BorderRadius.circular(16),
+            splashColor: EColor.primaryColor.withOpacity(0.1),
+            child: Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.9),
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.1),
+                    blurRadius: 8,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  _buildBadgeImage(imageUrl),
+                  const SizedBox(width: 8),
+                  Text(
+                    badgeName,
+                    style: Get.textTheme.bodyLarge?.copyWith(
+                      fontWeight: FontWeight.w600,
+                      color: EColor.primaryColor,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+    });
+  }
+
+  Widget _buildBadgeImage(String imageUrl) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(12),
+      child: CachedNetworkImage(
+        imageUrl: imageUrl,
+        width: 40,
+        height: 40,
+        placeholder: (context, url) => Container(
+          color: Colors.grey.shade200,
+          child: const Center(child: CircularProgressIndicator()),
+        ),
+        errorWidget: (context, url, error) => Container(
+          color: Colors.grey.shade100,
+          child: const Icon(Icons.verified, color: Colors.blue),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBadgePlaceholder() {
+    return Container(
+      padding: const EdgeInsets.all(8),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.9),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: Colors.grey.shade300,
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Container(
+            width: 80,
+            height: 16,
+            decoration: BoxDecoration(
+              color: Colors.grey.shade300,
+              borderRadius: BorderRadius.circular(4),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  static const String _defaultBadgeUrl =
+      'https://firebasestorage.googleapis.com/v0/b/echo-review-system.../default_badge.png';
 }
