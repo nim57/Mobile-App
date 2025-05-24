@@ -113,4 +113,6 @@ class BadgeRepository {
       throw 'Badge evaluation failed: ${e.toString()}';
     }
   }
+
+  
 }

@@ -5,6 +5,7 @@ import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:get/get_core/src/get_main.dart';
 import 'package:get/get_instance/src/extension_instance.dart';
 import 'package:get_storage/get_storage.dart';
+import 'Home_sereens/badge_system/badge_controller.dart';
 import 'Home_sereens/review_backend/review_controler.dart';
 import 'app.dart';
 import 'firebase_options.dart';
@@ -20,6 +21,8 @@ Future<void> main() async {
   
   // Then register ReviewController
   Get.lazyPut(() => ReviewController());
+  Get.lazyPut(() => BadgeController());
+  
   
 
   // Add global error handler

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../Utils/constants/colors.dart';
 import '../../Utils/constants/sizes.dart';
 import '../../Utils/helpers/helper_function.dart';
+import '../filtering_system/earchFilterScreen.dart';
 import '../widgets/Home_appBar.dart';
 import '../widgets/Search_bar.dart';
 import '../widgets/Tab_controller.dart';
@@ -43,14 +44,23 @@ class HomeScreen extends StatelessWidget {
                   child: ListView(
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),
-                    children: const [
+                    children: [
                       // Search Bar
-                      SizedBox(height: ESizes.spaceBtwItems),
+                      const SizedBox(height: ESizes.spaceBtwItems),
                       ESearchContainer(
                         text: 'Search Here...',
                         showBorder: true,
                         showBackground: false,
                         padding: EdgeInsets.zero,
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) =>
+                                  SearchFilterScreen(), // Removed const
+                            ),
+                          );
+                        },
                       ),
                     ],
                   ),

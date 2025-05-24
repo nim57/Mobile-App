@@ -461,5 +461,38 @@ void _scheduleDailyUpdate() {
   });
 }
 
+Future<List<String>> getItemIdsByBadges(Set<String> badges) async {
+  try {
+    final query = await _firestore
+        .collection('badges')
+        .where('badgeName', whereIn: badges)
+        .get();
+    return query.docs.map((doc) => doc.id).toList();
+  } catch (e) {
+    throw 'Failed to get items by badges: ${e.toString()}';
+  }
+}
+
+Future<List<Item>> getItemsByCategoryAndIds(
+  String? category, 
+  List<String> itemIds
+) async {
+  try {
+    Query query = _firestore.collection('items');
+    
+    if (category != null) {
+      query = query.where('categoryId', isEqualTo: category);
+    }
+    
+    if (itemIds.isNotEmpty) {
+      query = query.where(FieldPath.documentId, whereIn: itemIds);
+    }
+
+    final snapshot = await query.get();
+    return snapshot.docs.map((doc) => Item.fromSnapshot(doc)).toList();
+  } catch (e) {
+    throw 'Failed to filter items: ${e.toString()}';
+  }
+}
 
 }

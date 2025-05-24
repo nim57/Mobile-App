@@ -4,7 +4,7 @@ import 'package:iconsax/iconsax.dart';
 
 import '../../Utils/constants/colors.dart';
 import '../../Utils/helpers/helper_function.dart';
-import '../badge_system/manual_update_button.dart';
+import '../notification section/notification screen.dart';
 
 class ESettingIcon extends StatelessWidget {
   const ESettingIcon({
@@ -23,8 +23,8 @@ class ESettingIcon extends StatelessWidget {
     return Stack(
       children: [
         IconButton(
-            onPressed: () => Get.to(() => const   ManualUpdateButton(),),
-            icon: Icon(Iconsax.setting_2, color: iconColor)),
+            onPressed: () => Get.to(() =>  NotificationScreen(),),   //ManualUpdateButton(),),
+            icon: Icon(Iconsax.notification, color: iconColor)),
         Positioned(
           right: 0,
           child: Container(

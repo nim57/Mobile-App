@@ -7,16 +7,17 @@ import '../../Utils/helpers/helper_function.dart';
 
 class ESearchContainer extends StatelessWidget {
   const ESearchContainer({
-    super.key, required this.text,
-    this.icon = Iconsax.search_normal ,
-    this.showBackground =true,
-    this.showBorder =true,
+    super.key,
+    required this.text,
+    this.icon = Iconsax.search_normal,
+    this.showBackground = true,
+    this.showBorder = true,
     this.onTap,
     this.padding = const EdgeInsets.symmetric(horizontal: ESizes.defaultSpace),
   });
   final String text;
-  final IconData? icon ;
-  final VoidCallback? onTap;
+  final IconData? icon;
+   final VoidCallback? onTap;
   final bool showBackground, showBorder;
   final EdgeInsetsGeometry padding;
   @override
@@ -31,14 +32,28 @@ class ESearchContainer extends StatelessWidget {
           width: EDeviceUtils.getScreenWidth(context),
           padding: const EdgeInsets.all(ESizes.md),
           decoration: BoxDecoration(
-              color: showBackground ? dark ? EColor.dark: EColor.light : Colors.transparent,
+              color: showBackground
+                  ? dark
+                      ? EColor.dark
+                      : EColor.light
+                  : Colors.transparent,
               borderRadius: BorderRadius.circular(ESizes.cardRadiusNd),
-              border: showBorder ? Border.all(color: EColor.grey) :null),
+              border: showBorder
+                  ? Border.all(color: const Color.fromARGB(255, 202, 31, 31))
+                  : null),
           child: Row(
             children: [
-              Icon(icon,color: EColor.darkerGrey,),
-              const SizedBox(width: ESizes.spaceBtwItems,),
-              Text(text, style: Theme.of(context).textTheme.bodySmall,),
+              Icon(
+                icon,
+                color: EColor.darkerGrey,
+              ),
+              const SizedBox(
+                width: ESizes.spaceBtwItems,
+              ),
+              Text(
+                text,
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
             ],
           ),
         ),

@@ -9,6 +9,10 @@ class BadgeController extends GetxController {
   final RxBool isLoading = false.obs;
   final RxString error = ''.obs;
 
+  Stream<Badge_item?> streamBadge(String itemId) {
+    return _repository.streamBadgeByItem(itemId);
+  }
+
   Future<void> loadBadge(String itemId) async {
     try {
       isLoading(true);
