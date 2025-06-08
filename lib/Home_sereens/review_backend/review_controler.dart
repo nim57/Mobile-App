@@ -367,7 +367,7 @@ class ReviewController extends GetxController {
       currentItemId.value = itemId;
 
       isLoading(true);
-      errorMessage('');
+      errorMessage(''); 
 
       currentCriteria.value = categoryCriteria[categoryName] ?? [];
       // Load summary data

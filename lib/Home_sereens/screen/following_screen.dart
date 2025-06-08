@@ -8,59 +8,43 @@ import '../widgets/following_page/post_assets.dart';
 import '../widgets/following_page/profile_information.dart';
 import '../widgets/following_page/profile_pic.dart';
 
-class Following_Screen extends StatefulWidget {
-  const Following_Screen({super.key});
+class PostScreen extends StatefulWidget {
+  const PostScreen({super.key});
 
   @override
-  _Following_ScreenState createState() => _Following_ScreenState();
+  _PostScreenState createState() => _PostScreenState();
 }
 
-class _Following_ScreenState extends State<Following_Screen> {
-  // List of reactions
+class _PostScreenState extends State<PostScreen> {
   final List<String> reactions = ["👍", "❤️", "😂", "😮", "😢", "😡"];
-
-  // Currently selected reaction, initialized to "👍"
   String selectedReaction = "❤️";
-
-  // Whether to show all reactions
   bool showAllReactions = false;
 
-  // Method to build the post
   Widget buildPost() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        /// Post start
         const Row(
           children: [
-            /// Profile_pic
             Padding(
               padding: EdgeInsets.only(top: 10),
               child: Profile_pic(image: EImages.userProfileImage1),
             ),
             SizedBox(width: ESizes.spaceBtwItems),
-
-            /// Profile_information
             Post_infomation(),
           ],
         ),
-
-        /// Post Assets
         const Post_Assets(),
-
-        /// Reactor, comment, views icons
         Row(
           children: [
-            // Reactor icon with popup
             Padding(
               padding: const EdgeInsets.only(left: 60, top: 10),
               child: Stack(
                 clipBehavior: Clip.none,
                 children: [
-                  // Reactions popup
                   if (showAllReactions)
                     Positioned(
-                      top: -60, // Positioning the popup above the reactor
+                      top: -60,
                       left: 0,
                       child: Material(
                         elevation: 5,
@@ -84,10 +68,8 @@ class _Following_ScreenState extends State<Following_Screen> {
                               return GestureDetector(
                                 onTap: () {
                                   setState(() {
-                                    selectedReaction =
-                                        reaction; // Update selected reaction
-                                    showAllReactions =
-                                        false; // Hide after selection
+                                    selectedReaction = reaction;
+                                    showAllReactions = false;
                                   });
                                 },
                                 child: Container(
@@ -105,7 +87,6 @@ class _Following_ScreenState extends State<Following_Screen> {
                         ),
                       ),
                     ),
-                  // Main reactor icon
                   GestureDetector(
                     onTap: () {
                       setState(() {
@@ -119,7 +100,7 @@ class _Following_ScreenState extends State<Following_Screen> {
                         color: Colors.grey[200],
                       ),
                       child: Text(
-                        selectedReaction, // Display the selected reaction
+                        selectedReaction,
                         style: const TextStyle(fontSize: 24),
                       ),
                     ),
@@ -127,18 +108,12 @@ class _Following_ScreenState extends State<Following_Screen> {
                 ],
               ),
             ),
-
-            /// Comment icon
             const Comment_box(),
-
-            /// Views icon
             const Padding(
               padding: EdgeInsets.only(left: 70, top: 10),
               child: Icon(Iconsax.eye, size: 28),
             ),
             const Views_count(),
-
-            /// Rating bars
           ],
         ),
       ],
@@ -151,13 +126,13 @@ class _Following_ScreenState extends State<Following_Screen> {
       body: ListView(
         children: [
           buildPost(),
-          const Divider(), // Optional: To separate posts visually
+          const Divider(),
           buildPost(),
-          const Divider(), // Optional: To separate posts visually
+          const Divider(),
           buildPost(),
-          const Divider(), // Optional: To separate posts visually
+          const Divider(),
           buildPost(),
-          const Divider(), // Optional: To separate posts visually
+          const Divider(),
           buildPost(),
         ],
       ),

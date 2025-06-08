@@ -1,4 +1,3 @@
-// models/comment_model.dart
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class CommentModel {
@@ -12,6 +11,10 @@ class CommentModel {
   final List<String> tags;
   final String title;
   final Timestamp timestamp;
+  
+  // Sentiment analysis fields
+  final String? sentiment; // 'positive', 'negative', 'error', or null
+  final Timestamp? analyzedAt;
 
   CommentModel({
     required this.commentId,
@@ -24,6 +27,8 @@ class CommentModel {
     required this.tags,
     required this.title,
     required this.timestamp,
+    this.sentiment,        // Nullable
+    this.analyzedAt,       // Nullable
   });
 
   Map<String, dynamic> toMap() {
@@ -38,6 +43,8 @@ class CommentModel {
       'tags': tags,
       'title': title,
       'timestamp': timestamp,
+      'sentiment': sentiment,      // Added
+      'analyzedAt': analyzedAt,     // Added
     };
   }
 
@@ -53,6 +60,8 @@ class CommentModel {
       tags: List<String>.from(map['tags'] ?? []),
       title: map['title'] ?? '',
       timestamp: (map['timestamp'] as Timestamp?) ?? Timestamp.now(),
+      sentiment: map['sentiment'],             // Added
+      analyzedAt: map['analyzedAt'] as Timestamp?, // Added
     );
   }
 }

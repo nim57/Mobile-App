@@ -383,7 +383,9 @@ class ReplyTile extends StatelessWidget {
     final isCurrentUser = userController.user.value.id == reply.authorId;
 
     return Container(
+      
       padding: const EdgeInsets.symmetric(vertical: 4.0),
+      
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -607,14 +609,14 @@ class ReplyTile extends StatelessWidget {
 
 class _UserHeader extends StatelessWidget {
   final ReviewModel review;
+  final UserController userController = Get.find<UserController>();
+  final bool isCurrentUser;
 
-  _UserHeader({required this.review});
-  final userController = Get.find<UserController>();
-  final isCurrentUser = true;
+  _UserHeader({required this.review})
+      : isCurrentUser = Get.find<UserController>().user.value.id == review.userId;
 
-  // Helper function to get the appropriate profile image
   ImageProvider getProfileImage() {
-    if (review.isVisible == true) {
+    if (review.isVisible) {
       return review.userProfile.isNotEmpty
           ? NetworkImage(review.userProfile)
           : const AssetImage(
@@ -622,6 +624,30 @@ class _UserHeader extends StatelessWidget {
     }
     return const AssetImage(
         'Assets/App_Assets/authentication_assets/auth2.png');
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        CircleAvatar(backgroundImage: getProfileImage()),
+        const SizedBox(width: 12),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              review.isVisible ? review.username : 'Anonymous',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            Text(
+              ReviewController.instance.getTimeAgo(review.timestamp),
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+          ],
+        ),
+        if (isCurrentUser) _buildDeleteMenu(context),
+      ],
+    );
   }
 
   Widget _buildDeleteMenu(BuildContext context) {
@@ -659,32 +685,6 @@ class _UserHeader extends StatelessWidget {
           ),
         ],
       ),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        CircleAvatar(
-          backgroundImage: getProfileImage(),
-        ),
-        const SizedBox(width: 12),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              review.isVisible == true ? review.username : 'Anonymous',
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-            Text(
-              ReviewController.instance.getTimeAgo(review.timestamp),
-              style: Theme.of(context).textTheme.bodySmall,
-            ),
-          ],
-        ),
-        if (isCurrentUser) _buildDeleteMenu(context),
-      ],
     );
   }
 }

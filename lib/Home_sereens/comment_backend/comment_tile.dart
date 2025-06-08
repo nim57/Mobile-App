@@ -33,6 +33,9 @@ class CommentTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final replyController = Get.find<ReplyController>();
+    final userController = Get.find<UserController>();
+    final isCurrentUser = userController.user.value.id == comment.userId;
+
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -42,6 +45,7 @@ class CommentTile extends StatelessWidget {
         Text(comment.title, style: Theme.of(context).textTheme.titleMedium),
         const SizedBox(height: 8),
         Text(comment.text),
+          _buildSentimentIndicator(),
         const SizedBox(height: 12),
         _tags(),
         _actionButtons(),
@@ -50,11 +54,51 @@ class CommentTile extends StatelessWidget {
     );
   }
 
+
+  /// sentiment analysis indicator
+   Widget _buildSentimentIndicator() {
+    final sentiment = comment.sentiment;
+    
+    if (sentiment == null) {
+      return Row(
+        children: [
+          const Text('Analyzing sentiment... '),
+          SizedBox(
+            width: 16,
+            height: 16,
+            child: CircularProgressIndicator(strokeWidth: 2),
+          ),
+        ],
+      );
+    }
+    
+    return Row(
+      children: [
+        Icon(
+          sentiment == 'positive'
+            ? Icons.sentiment_satisfied
+            : Icons.sentiment_dissatisfied,
+          color: sentiment == 'positive' ? Colors.green : Colors.red,
+        ),
+        const SizedBox(width: 8),
+        Text(
+          'Sentiment: ${sentiment.toUpperCase()}',
+          style: TextStyle(
+            color: sentiment == 'positive' ? Colors.green : Colors.red,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ],
+    );
+  }
+  ///dddddddddddddddddd
+
   Widget _userHeader(BuildContext context) {
     final userController = Get.find<UserController>();
     final isCurrentUser = userController.user.value.id == comment.userId;
     return Row(
       children: [
+              if (isCurrentUser) _buildDeleteMenu(context),
         CircleAvatar(backgroundImage: getProfileImage()),
         const SizedBox(width: 12),
         Column(
