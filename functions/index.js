@@ -1,10 +1,13 @@
-
 const { onDocumentCreated } = require("firebase-functions/v2/firestore");
 const { logger } = require("firebase-functions");
 const admin = require("firebase-admin");
 const axios = require("axios");
 
-admin.initializeApp();
+// Initialize with explicit credentials
+admin.initializeApp({
+  credential: admin.credential.applicationDefault(),
+  databaseURL: "https://echo-review-system.firebaseio.com"
+});
 
 const API_URL = "https://sentiment-api-535446153093.us-central1.run.app/predict";
 
@@ -41,7 +44,9 @@ exports.analyzeComment = onDocumentCreated(
 
       logger.log("Analysis result:", response.data);
 
-      await snapshot.ref.update({
+      // Use firestore() with explicit credentials
+      const db = admin.firestore();
+      await db.doc(`comments/${event.params.commentId}`).update({
         sentiment: response.data.sentiment,
         analyzedAt: admin.firestore.FieldValue.serverTimestamp(),
       });
@@ -54,10 +59,15 @@ exports.analyzeComment = onDocumentCreated(
         response: error.response?.data,
       });
 
-      await snapshot.ref.update({
-        sentiment: "error",
-        errorMessage: error.message,
-      });
+      try {
+        // Fallback update attempt
+        await admin.firestore().doc(`comments/${event.params.commentId}`).update({
+          sentiment: "error",
+          errorMessage: error.message.substring(0, 500),
+        });
+      } catch (updateError) {
+        logger.error("Fallback update failed:", updateError);
+      }
     }
   }
 );

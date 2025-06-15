@@ -4,7 +4,7 @@ import 'comment_model.dart';
 class CommentRepository {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
- Stream<List<CommentModel>> getCommentsStream(String itemId) {
+  Stream<List<CommentModel>> getCommentsStream(String itemId) {
     try {
       return _firestore
           .collection('comments')
@@ -12,19 +12,18 @@ class CommentRepository {
           .orderBy('timestamp', descending: true)
           .snapshots()
           .handleError((error) {
-            print('🔥 FIRESTORE ERROR: $error');
-            throw error;
-          })
-          .map((snapshot) {
-            print('📥 Received ${snapshot.docs.length} comments');
-            
-            return snapshot.docs.map((doc) {
-              final data = doc.data();
-              print('📄 Document ${doc.id}: ${data.toString()}');
-              
-              return CommentModel.fromMap(data);
-            }).toList();
-          });
+        print('🔥 FIRESTORE ERROR: $error');
+        throw error;
+      }).map((snapshot) {
+        print('📥 Received ${snapshot.docs.length} comments');
+
+        return snapshot.docs.map((doc) {
+          final data = doc.data();
+          print('📄 Document ${doc.id}: ${data.toString()}');
+
+          return CommentModel.fromMap(data);
+        }).toList();
+      });
     } catch (e) {
       print('❌ CRITICAL ERROR: $e');
       rethrow;

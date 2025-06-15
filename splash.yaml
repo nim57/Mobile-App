@@ -1,13 +1,13 @@
 flutter_native_splash:
  color: "E0D7D7"
  color_dark: "#272727"
- image: 'Assets/App_Assets/authentication_assets/LogoWithBack.png'
- image_dark: 'Assets/App_Assets/authentication_assets/LogoWithBack.png'
+ image: 'Assets\App_Assets\authentication_assets\staring screen.png'
+ image_dark: 'Assets\App_Assets\authentication_assets\staring screen.png'
 
  android_12:
   color: "E0D7D7"
   color_dark: "#272727"
-  image: 'Assets/App_Assets/authentication_assets/LogoWithBack.png'
-  image_dark: 'Assets/App_Assets/authentication_assets/LogoWithBack.png'
+  image: 'Assets\App_Assets\authentication_assets\staring screen.png'
+  image_dark: 'Assets\App_Assets\authentication_assets\staring screen.png'
 
  web: false
