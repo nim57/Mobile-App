@@ -32,7 +32,7 @@ class ReviewController extends GetxController {
   static ReviewController get instance => Get.find();
 
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-   final Rx<ItemReviewSummary?> selectedSummary = Rx<ItemReviewSummary?>(null);
+  final Rx<ItemReviewSummary?> selectedSummary = Rx<ItemReviewSummary?>(null);
   final ReviewRepository _repository = ReviewRepository();
   final RxMap<String, double> ratings = <String, double>{}.obs;
   final RxList<ReviewModel> reviews = <ReviewModel>[].obs;
@@ -51,6 +51,209 @@ class ReviewController extends GetxController {
   final RxBool isUpdating = false.obs;
   final RxString updateError = ''.obs;
   final categoryCriteria = {
+    "Grocery & Supermarkets": [
+      "Product Availability",
+      "Price Fairness",
+      "Cleanliness",
+      "Staff Behavior",
+      "Waiting Time"
+    ],
+    "Restaurants & Cafés": [
+      "Taste & Quality",
+      "Customer Service",
+      "Cleanliness",
+      "Delivery Speed",
+      "Value for Money"
+    ],
+    "Pharmacies & Medical Stores": [
+      "Medicine Availability",
+      "Staff Knowledge",
+      "Price Fairness",
+      "Waiting Time",
+      "Customer Service"
+    ],
+    "Hospitals & Clinics": [
+      "Doctor’s Attention",
+      "Cleanliness",
+      "Waiting Time",
+      "Staff Behavior",
+      "Treatment Effectiveness"
+    ],
+    "Mobile Phone & Accessories Shops": [
+      "Product Quality",
+      "Customer Service",
+      "Warranty Support",
+      "Price Fairness",
+      "Technical Knowledge"
+    ],
+    "Electronics & Appliance Stores": [
+      "Product Durability",
+      "Installation Support",
+      "Price Fairness",
+      "Customer Service",
+      "Warranty Claim Process"
+    ],
+    "Clothing & Fashion Stores": [
+      "Product Quality",
+      "Staff Behavior",
+      "Changing Room Hygiene",
+      "Availability of Sizes",
+      "Price-Value Ratio"
+    ],
+    "Online Shops & Delivery Services": [
+      "Delivery Speed",
+      "Product Match with Ad",
+      "Return/Refund Process",
+      "Customer Communication",
+      "Packaging Quality"
+    ],
+    "Hardware & Building Materials": [
+      "Material Quality",
+      "Stock Availability",
+      "Delivery Timeliness",
+      "Price Competitiveness",
+      "Technical Advice"
+    ],
+    "Beauty Salons & Barbers": [
+      "Cleanliness",
+      "Staff Friendliness",
+      "Service Quality",
+      "Waiting Time",
+      "Value for Money"
+    ],
+    "Vehicle Repair & Service Centres": [
+      "Repair Quality",
+      "Cost Transparency",
+      "Service Speed",
+      "Customer Communication",
+      "Warranty Provided"
+    ],
+    "Computer & Laptop Shops": [
+      "Product Quality",
+      "Customer Service",
+      "After-Sales Support",
+      "Technical Expertise",
+      "Price Transparency"
+    ],
+    "Tuition Classes & Education Institutes": [
+      "Teaching Quality",
+      "Material Availability",
+      "Time Management",
+      "Student Support",
+      "Facility Cleanliness"
+    ],
+    "Courier & Delivery Services": [
+      "Delivery Time",
+      "Item Safety",
+      "Customer Communication",
+      "Tracking Accuracy",
+      "Service Cost"
+    ],
+    "Furniture & Homeware Stores": [
+      "Product Quality",
+      "Delivery Punctuality",
+      "Assembly Support",
+      "Warranty Support",
+      "Price-Value Ratio"
+    ],
+    "Fitness Centres & Gyms": [
+      "Equipment Condition",
+      "Cleanliness",
+      "Trainer Support",
+      "Operating Hours",
+      "Pricing Structure"
+    ],
+    "Event Planning & Wedding Services": [
+      "Service Coordination",
+      "Staff Friendliness",
+      "On-Time Execution",
+      "Value for Money",
+      "Flexibility"
+    ],
+    "Repair Services (TV, Fridge, AC)": [
+      "Repair Quality",
+      "Response Time",
+      "Parts Used",
+      "Cost Transparency",
+      "Communication"
+    ],
+    "Taxi & Ride-Hailing Services": [
+      "Driver Behavior",
+      "Arrival Time",
+      "Fare Transparency",
+      "Vehicle Cleanliness",
+      "Trip Safety"
+    ],
+    "Pet Shops & Veterinary Clinics": [
+      "Product/Medicine Availability",
+      "Veterinarian Expertise",
+      "Cleanliness",
+      "Customer Service",
+      "Pricing"
+    ],
+    "Home Cleaning & Maintenance": [
+      "Cleaning Quality",
+      "Time Accuracy",
+      "Professionalism",
+      "Chemical Safety",
+      "Cost Effectiveness"
+    ],
+    "Divisional Secretariats": [
+      "Staff Helpfulness",
+      "Document Process Speed",
+      "Cleanliness",
+      "Communication",
+      "Fair Treatment"
+    ],
+    "Municipal Councils": [
+      "Waste Management Service",
+      "Permit Process Time",
+      "Staff Cooperation",
+      "Cleanliness",
+      "Responsiveness"
+    ],
+    "Police Stations": [
+      "Responsiveness",
+      "Fairness in Treatment",
+      "Staff Attitude",
+      "Waiting Time",
+      "Communication"
+    ],
+    "Public Transport Services": [
+      "Punctuality",
+      "Cleanliness",
+      "Staff Behavior",
+      "Comfort Level",
+      "Fare Reasonability"
+    ],
+    "Postal Services": [
+      "Delivery Speed",
+      "Item Safety",
+      "Staff Helpfulness",
+      "Queue Management",
+      "Communication"
+    ],
+    "Banks & Financial Institutions": [
+      "Service Speed",
+      "Staff Friendliness",
+      "Mobile/Online Banking",
+      "Queue System",
+      "Transparency"
+    ],
+    "Schools & Universities": [
+      "Teaching Quality",
+      "Staff Support",
+      "Cleanliness",
+      "Discipline System",
+      "Facilities"
+    ],
+    "Water Board / CEB / Telecom": [
+      "Issue Resolution Time",
+      "Bill Accuracy",
+      "Staff Behavior",
+      "Accessibility",
+      "Complaint Handling"
+    ],
     "Mobile Repair Services": [
       "Repair Quality",
       "Turnaround Time",
@@ -64,300 +267,6 @@ class ReviewController extends GetxController {
       "Pricing Competitiveness",
       "Shipping Reliability",
       "Customer Service"
-    ],
-    "Tuk-Tuk Rental Services": [
-      "Vehicle Condition",
-      "Rental Pricing Transparency",
-      "Customer Support",
-      "Availability of Vehicles",
-      "Safety Features"
-    ],
-    "Sustainable Eco-Tourism Agencies": [
-      "Guide Knowledge",
-      "Eco-Friendliness of Activities",
-      "Itinerary Satisfaction",
-      "Safety Measures",
-      "Value for Money"
-    ],
-    "Online Tutoring Platforms": [
-      "Tutor Expertise",
-      "Platform Usability",
-      "Session Flexibility",
-      "Course Relevance",
-      "Technical Support"
-    ],
-    "E-Commerce Stores (Handicrafts, Apparel, Electronics)": [
-      "Website/App Usability",
-      "Delivery Speed",
-      "Product Accuracy (vs. Description)",
-      "Return/Refund Process",
-      "Payment Security"
-    ],
-    "Customized Travel Planners": [
-      "Personalization of Itinerary",
-      "Communication Responsiveness",
-      "Budget Adherence",
-      "Local Experience Quality",
-      "Emergency Support"
-    ],
-    "Agriculture Tech Providers": [
-      "IoT Device Reliability",
-      "Technical Support",
-      "Value for Money",
-      "Training Provided",
-      "Impact on Farm Yield"
-    ],
-    "Banks & Financial Institutions": [
-      "Transaction Speed",
-      "Staff Professionalism",
-      "Digital Banking Features",
-      "Loan Approval Process",
-      "Fee Transparency"
-    ],
-    "Handicraft Stores": [
-      "Product Authenticity",
-      "Craftsmanship Quality",
-      "Pricing Fairness",
-      "Store Ambiance",
-      "Seller Knowledge"
-    ],
-    "Tea Retailers": [
-      "Tea Freshness",
-      "Packaging Appeal",
-      "Variety of Blends",
-      "Staff Recommendations",
-      "Brand Reputation"
-    ],
-    "Furniture Outlets": [
-      "Durability of Products",
-      "Customization Options",
-      "Delivery & Assembly Service",
-      "Price vs. Quality",
-      "After-Sales Support"
-    ],
-    "Designer Boutiques": [
-      "Design Uniqueness",
-      "Fabric Quality",
-      "Fit & Sizing Accuracy",
-      "Staff Styling Advice",
-      "Luxury Experience"
-    ],
-    "Art Galleries": [
-      "Artwork Authenticity",
-      "Curation Quality",
-      "Pricing Transparency",
-      "Artist Interaction Opportunities",
-      "Ambiance & Lighting"
-    ],
-    "Spice Markets": [
-      "Spice Authenticity",
-      "Vendor Knowledge",
-      "Bargaining Fairness",
-      "Cleanliness of Stalls",
-      "Freshness of Products"
-    ],
-    "Antique Shops": [
-      "Item Authenticity",
-      "Historical Documentation",
-      "Pricing Justification",
-      "Restoration Services",
-      "Staff Expertise"
-    ],
-    "Supermarkets": [
-      "Product Variety",
-      "Checkout Speed",
-      "Staff Helpfulness",
-      "Cleanliness",
-      "Loyalty Program Benefits"
-    ],
-    "Digital Marketing Agencies": [
-      "Campaign Effectiveness",
-      "Reporting Clarity",
-      "Creativity of Content",
-      "Communication Responsiveness",
-      "ROI Delivered"
-    ],
-    "Freelancing Platforms": [
-      "Job Matching Accuracy",
-      "Payment Security",
-      "Client Review Authenticity",
-      "Platform Fees Fairness",
-      "Dispute Resolution"
-    ],
-    "Social Media Management Services": [
-      "Content Engagement Rates",
-      "Posting Consistency",
-      "Creativity of Strategy",
-      "Analytics Reporting",
-      "Client Collaboration"
-    ],
-    "Podcast Production Studios": [
-      "Audio Quality",
-      "Editing Precision",
-      "Host Guidance",
-      "Turnaround Time",
-      "Equipment Modernity"
-    ],
-    "Restaurants & Cafés": [
-      "Food Taste & Presentation",
-      "Hygiene Standards",
-      "Service Speed",
-      "Ambiance",
-      "Value for Money"
-    ],
-    "Interior Redesign Services": [
-      "Space Utilization Creativity",
-      "Budget Adherence",
-      "Client Consultation Quality",
-      "Project Timeliness",
-      "Sustainability of Materials"
-    ],
-    "Dropshipping Businesses": [
-      "Product Sourcing Reliability",
-      "Shipping Time",
-      "Customer Complaint Handling",
-      "Profit Margins",
-      "Supplier Communication"
-    ],
-    "Courier Services": [
-      "Delivery Timeliness",
-      "Parcel Condition",
-      "Tracking Accuracy",
-      "Customer Support",
-      "Pricing Transparency"
-    ],
-    "Insurance Providers": [
-      "Claim Processing Speed",
-      "Policy Clarity",
-      "Agent Support",
-      "Coverage Flexibility",
-      "Premium Fairness"
-    ],
-    "Telecom Services": [
-      "Network Reliability",
-      "Data Speed",
-      "Billing Transparency",
-      "Customer Service",
-      "Promotional Offers"
-    ],
-    "TV & Streaming Services": [
-      "Content Variety",
-      "Streaming Quality",
-      "Subscription Pricing",
-      "User Interface",
-      "Customer Support"
-    ],
-    "Vehicle Garages": [
-      "Repair Durability",
-      "Cost Transparency",
-      "Mechanic Expertise",
-      "Parts Availability",
-      "Cleanliness of Facility"
-    ],
-    "Salons & Beauty Parlors": [
-      "Service Hygiene",
-      "Staff Skill Level",
-      "Product Quality Used",
-      "Wait Time Management",
-      "Longevity of Results"
-    ],
-    "Grocery Stores": [
-      "Stock Freshness",
-      "Pricing Competitiveness",
-      "Checkout Efficiency",
-      "Staff Friendliness",
-      "Ease of Navigation"
-    ],
-    "Phone & Laptop Retailers": [
-      "Product Authenticity (Genuine Brands)",
-      "Warranty Clarity",
-      "After-Sales Support",
-      "Pricing vs. Market Rates",
-      "Demo & Testing Facilities"
-    ],
-    "Furniture Shops": [
-      "Assembly Ease",
-      "Material Quality",
-      "Design Modernity",
-      "Delivery Punctuality",
-      "Customization Options"
-    ],
-    "Technical Repair Shops": [
-      "Diagnostic Accuracy",
-      "Repair Cost Fairness",
-      "Replacement Part Quality",
-      "Technician Communication",
-      "Service Warranty"
-    ],
-    "Transport Services (Ride-Hailing, Bus/Train)": [
-      "Driver/Rider Behavior",
-      "Vehicle Cleanliness",
-      "Fare Accuracy",
-      "Booking App Reliability",
-      "Safety Features"
-    ],
-    "Ayurvedic & Herbal Stores": [
-      "Product Purity",
-      "Staff Knowledge",
-      "Packaging Sustainability",
-      "Effectiveness of Remedies",
-      "Price vs. Benefits"
-    ],
-    "Gems & Jewellery Shops": [
-      "Gem Certification Authenticity",
-      "Design Uniqueness",
-      "Pricing Transparency",
-      "Customization Services",
-      "After-Purchase Cleaning/Polishing"
-    ],
-    "Bookstores": [
-      "Book Variety",
-      "Staff Recommendations",
-      "Seating/Reading Areas",
-      "Event Hosting Quality",
-      "Loyalty Discounts"
-    ],
-    "Floral Shops": [
-      "Flower Freshness",
-      "Arrangement Creativity",
-      "Delivery Timeliness",
-      "Pricing Fairness",
-      "Seasonal Variety"
-    ],
-    "Fitness Centers": [
-      "Equipment Maintenance",
-      "Trainer Expertise",
-      "Cleanliness",
-      "Class Variety",
-      "Membership Value"
-    ],
-    "Boat-Building Workshops": [
-      "Craftsmanship Quality",
-      "Material Durability",
-      "Project Timeliness",
-      "Cost Estimation Accuracy",
-      "Custom Design Support"
-    ],
-    "Coconut Product Exporters": [
-      "Product Purity",
-      "Eco-Friendly Packaging",
-      "Export Documentation Support",
-      "Bulk Order Discounts",
-      "Supplier Reliability"
-    ],
-    "3D Printing Studios": [
-      "Print Accuracy",
-      "Material Options",
-      "Turnaround Time",
-      "Cost per Project",
-      "Design Consultation"
-    ],
-    "EV Charging Stations": [
-      "Charging Speed",
-      "Station Availability",
-      "Payment Method Flexibility",
-      "Safety Standards",
-      "App Integration for Reservations"
     ]
   };
 
@@ -367,40 +276,29 @@ class ReviewController extends GetxController {
       currentItemId.value = itemId;
 
       isLoading(true);
-      errorMessage(''); 
+      errorMessage.value = '';
 
-      currentCriteria.value = categoryCriteria[categoryName] ?? [];
-      // Load summary data
+      // 1. Load summary (no error if null)
       selectedSummary.value = await _itemrepository.getSummaryByItem(itemId);
-       
-        if (selectedSummary.value == null) {
-        errorMessage.value = 'No review data available'; // Set error message
-      }
-      
 
-      _repository.getReviewsByItem(itemId).listen((reviewsList) {
-        reviews.value = reviewsList;
-        print('Reviews for $itemId:');
-        for (var r in reviewsList) {
-          print(r.ratings);
-        }
-        print('Calculated averages: $averageRatings');
-        isLoading(false);
-      }, onError: (e) {
-        if (e.toString().contains('index')) {
-          _showIndexErrorDialog(e.toString());
-        } else {
-          errorMessage.value = e.toString();
-        }
-        isLoading(false);
-      });
-
+      // 2. Get names
       categoryName.value = await _repository.getCategoryName(categoryId);
       itemName.value = await _repository.getItemName(itemId);
 
-      reviews.bindStream(_repository.getReviewsByItem(itemId));
+      // 3. Get criteria using ID first, then name
+      currentCriteria.value = categoryCriteria[categoryId] ??
+          categoryCriteria[categoryName.value] ??
+          [];
 
-      
+      // 4. Setup single stream
+      reviews.bindStream(_repository.getReviewsByItem(itemId).handleError((e) {
+        errorMessage.value = e.toString();
+        if (e.toString().contains('index')) {
+          _showIndexErrorDialog(e.toString());
+        }
+      }));
+
+      print('Fetched ${reviews.length} reviews for $itemId');
     } on FirebaseException catch (e) {
       errorMessage.value = 'Firebase Error: ${e.message}';
       if (e.code == 'failed-precondition') {
@@ -416,6 +314,7 @@ class ReviewController extends GetxController {
     }
   }
 
+/////////////////////////////////
   void _showIndexErrorDialog(String error) {
     Get.dialog(
       AlertDialog(
@@ -547,486 +446,487 @@ class ReviewController extends GetxController {
 
 // Add to ReviewController
   // review_controller.dart (partial update)
- // review_controller.dart (updated)
-Future<Map<String, dynamic>> calculateReviewMetrics(String itemId) async {
-  try {
-    // Get all reviews for the item
-    final reviews = await _firestore.collection('reviews')
-        .where('itemId', isEqualTo: itemId)
-        .get();
+  // review_controller.dart (updated)
+  Future<Map<String, dynamic>> calculateReviewMetrics(String itemId) async {
+    try {
+      // Get all reviews for the item
+      final reviews = await _firestore
+          .collection('reviews')
+          .where('itemId', isEqualTo: itemId)
+          .get();
 
-    // Get latest review per user
-    final userReviews = <String, ReviewModel>{};
-    for (final doc in reviews.docs) {
-      final review = ReviewModel.fromSnapshot(doc);
-      final existing = userReviews[review.userId];
-      if (existing == null || 
-          review.timestamp.compareTo(existing.timestamp) > 0) {
-        userReviews[review.userId] = review;
-      }
-    }
-
-    // Get item and category data
-    final item = await _itemController.getItemById(itemId);
-    final category = await _firestore.collection('categories')
-        .doc(item.categoryId)
-        .get();
-
-    // Validate category exists
-    if (!category.exists) {
-      throw 'Associated category not found';
-    }
-
-    // Get category data and criteria
-    final categoryData = category.data()!;
-    final criteria = _getCriteriaForCategory(item.categoryId, categoryData);
-
-    // Calculate review points
-    final reviewPoints = <String, double>{};
-    for (final criterion in criteria) {
-      double total = 0.0;
-      int count = 0;
-
-      for (var review in userReviews.values) {
-        final rating = review.ratings[criterion];
-        if (rating != null) {
-          total += rating;
-          count++;
+      // Get latest review per user
+      final userReviews = <String, ReviewModel>{};
+      for (final doc in reviews.docs) {
+        final review = ReviewModel.fromSnapshot(doc);
+        final existing = userReviews[review.userId];
+        if (existing == null ||
+            review.timestamp.compareTo(existing.timestamp) > 0) {
+          userReviews[review.userId] = review;
         }
       }
 
-      reviewPoints[criterion] = count > 0 ? (total / count) : 0.0;
+      // Get item and category data
+      final item = await _itemController.getItemById(itemId);
+      final category =
+          await _firestore.collection('categories').doc(item.categoryId).get();
+
+      // Validate category exists
+      if (!category.exists) {
+        throw 'Associated category not found';
+      }
+
+      // Get category data and criteria
+      final categoryData = category.data()!;
+      final criteria = _getCriteriaForCategory(item.categoryId, categoryData);
+
+      // Calculate review points
+      final reviewPoints = <String, double>{};
+      for (final criterion in criteria) {
+        double total = 0.0;
+        int count = 0;
+
+        for (var review in userReviews.values) {
+          final rating = review.ratings[criterion];
+          if (rating != null) {
+            total += rating;
+            count++;
+          }
+        }
+
+        reviewPoints[criterion] = count > 0 ? (total / count) : 0.0;
+      }
+
+      return {
+        'quinceUsersCount': userReviews.length,
+        'reviewPoints': reviewPoints,
+        'totalReviews': reviews.docs.length,
+      };
+    } catch (e) {
+      Get.log('Review metric calculation error: $e');
+      throw 'Calculation failed: ${e.toString()}';
+    }
+  }
+
+  List<String> _getCriteriaForCategory(
+      String categoryId, Map<String, dynamic> categoryData) {
+    // First check local categoryCriteriaa by category ID
+    if (categoryCriteriaa.containsKey(categoryId)) {
+      return categoryCriteriaa[categoryId]!;
     }
 
-    return {
-      'quinceUsersCount': userReviews.length,
-      'reviewPoints': reviewPoints,
-      'totalReviews': reviews.docs.length,
-    };
-  } catch (e) {
-    Get.log('Review metric calculation error: $e');
-    throw 'Calculation failed: ${e.toString()}';
-  }
-}
+    // Then check Firestore's 'criteria' field
+    if (categoryData.containsKey('criteria')) {
+      return List<String>.from(categoryData['criteria']);
+    }
 
-List<String> _getCriteriaForCategory(String categoryId, Map<String, dynamic> categoryData) {
-  // First check local categoryCriteriaa by category ID
-  if (categoryCriteriaa.containsKey(categoryId)) {
-    return categoryCriteriaa[categoryId]!;
+    // Fallback to category name in categoryCriteriaa
+    final categoryName = categoryData['name'] as String;
+    if (categoryCriteriaa.containsKey(categoryName)) {
+      return categoryCriteriaa[categoryName]!;
+    }
+
+    throw 'No criteria found for category $categoryId ($categoryName)';
   }
 
-  // Then check Firestore's 'criteria' field
-  if (categoryData.containsKey('criteria')) {
-    return List<String>.from(categoryData['criteria']);
-  }
+  final categoryCriteriaa = {
+    // Using category IDs as keys
+    // Mobile Repair Services
+    "0001": [
+      "Repair Quality",
+      "Turnaround Time",
+      "Technician Expertise",
+      "Cost Transparency",
+      "Warranty on Repairs"
+    ],
 
-  // Fallback to category name in categoryCriteriaa
-  final categoryName = categoryData['name'] as String;
-  if (categoryCriteriaa.containsKey(categoryName)) {
-    return categoryCriteriaa[categoryName]!;
-  }
+    // Spice Packaging & Export Shops
+    "0002": [
+      "Product Freshness",
+      "Packaging Quality",
+      "Pricing Competitiveness",
+      "Shipping Reliability",
+      "Customer Service"
+    ],
 
-  throw 'No criteria found for category $categoryId ($categoryName)';
-}
+    // Tuk-Tuk Rental Services
+    "0005": [
+      "Vehicle Condition",
+      "Rental Pricing Transparency",
+      "Customer Support",
+      "Availability of Vehicles",
+      "Safety Features"
+    ],
 
-final categoryCriteriaa = {
-  // Using category IDs as keys
-   // Mobile Repair Services
-  "0001": [
-    "Repair Quality",
-    "Turnaround Time",
-    "Technician Expertise",
-    "Cost Transparency",
-    "Warranty on Repairs"
-  ],
-  
-  // Spice Packaging & Export Shops
-  "0002": [
-    "Product Freshness",
-    "Packaging Quality",
-    "Pricing Competitiveness",
-    "Shipping Reliability",
-    "Customer Service"
-  ],
+    // Sustainable Eco-Tourism Agencies
+    "0006": [
+      "Guide Knowledge",
+      "Eco-Friendliness of Activities",
+      "Itinerary Satisfaction",
+      "Safety Measures",
+      "Value for Money"
+    ],
 
-  // Tuk-Tuk Rental Services
-  "0005": [
-    "Vehicle Condition",
-    "Rental Pricing Transparency",
-    "Customer Support",
-    "Availability of Vehicles",
-    "Safety Features"
-  ],
+    // Online Tutoring Platforms
+    "0007": [
+      "Tutor Expertise",
+      "Platform Usability",
+      "Session Flexibility",
+      "Course Relevance",
+      "Technical Support"
+    ],
 
-  // Sustainable Eco-Tourism Agencies
-  "0006": [
-    "Guide Knowledge",
-    "Eco-Friendliness of Activities",
-    "Itinerary Satisfaction",
-    "Safety Measures",
-    "Value for Money"
-  ],
+    // E-Commerce Stores (Handicrafts, Apparel, Electronics)
+    "0008": [
+      "Website/App Usability",
+      "Delivery Speed",
+      "Product Accuracy (vs. Description)",
+      "Return/Refund Process",
+      "Payment Security"
+    ],
 
-  // Online Tutoring Platforms
-  "0007": [
-    "Tutor Expertise",
-    "Platform Usability",
-    "Session Flexibility",
-    "Course Relevance",
-    "Technical Support"
-  ],
+    // Customized Travel Planners
+    "0009": [
+      "Personalization of Itinerary",
+      "Communication Responsiveness",
+      "Budget Adherence",
+      "Local Experience Quality",
+      "Emergency Support"
+    ],
 
-  // E-Commerce Stores (Handicrafts, Apparel, Electronics)
-  "0008": [
-    "Website/App Usability",
-    "Delivery Speed",
-    "Product Accuracy (vs. Description)",
-    "Return/Refund Process",
-    "Payment Security"
-  ],
+    // Agriculture Tech Providers
+    "0010": [
+      "IoT Device Reliability",
+      "Technical Support",
+      "Value for Money",
+      "Training Provided",
+      "Impact on Farm Yield"
+    ],
 
-  // Customized Travel Planners
-  "0009": [
-    "Personalization of Itinerary",
-    "Communication Responsiveness",
-    "Budget Adherence",
-    "Local Experience Quality",
-    "Emergency Support"
-  ],
+    // Banks & Financial Institutions
+    "0011": [
+      "Transaction Speed",
+      "Staff Professionalism",
+      "Digital Banking Features",
+      "Loan Approval Process",
+      "Fee Transparency"
+    ],
 
-  // Agriculture Tech Providers
-  "0010": [
-    "IoT Device Reliability",
-    "Technical Support",
-    "Value for Money",
-    "Training Provided",
-    "Impact on Farm Yield"
-  ],
+    // Handicraft Stores
+    "0012": [
+      "Product Authenticity",
+      "Craftsmanship Quality",
+      "Pricing Fairness",
+      "Store Ambiance",
+      "Seller Knowledge"
+    ],
 
-  // Banks & Financial Institutions
-  "0011": [
-    "Transaction Speed",
-    "Staff Professionalism",
-    "Digital Banking Features",
-    "Loan Approval Process",
-    "Fee Transparency"
-  ],
+    // Tea Retailers
+    "0013": [
+      "Tea Freshness",
+      "Packaging Appeal",
+      "Variety of Blends",
+      "Staff Recommendations",
+      "Brand Reputation"
+    ],
 
-  // Handicraft Stores
-  "0012": [
-    "Product Authenticity",
-    "Craftsmanship Quality",
-    "Pricing Fairness",
-    "Store Ambiance",
-    "Seller Knowledge"
-  ],
+    // Furniture Outlets
+    "0014": [
+      "Durability of Products",
+      "Customization Options",
+      "Delivery & Assembly Service",
+      "Price vs. Quality",
+      "After-Sales Support"
+    ],
 
-  // Tea Retailers
-  "0013": [
-    "Tea Freshness",
-    "Packaging Appeal",
-    "Variety of Blends",
-    "Staff Recommendations",
-    "Brand Reputation"
-  ],
+    // Designer Boutiques
+    "0015": [
+      "Design Uniqueness",
+      "Fabric Quality",
+      "Fit & Sizing Accuracy",
+      "Staff Styling Advice",
+      "Luxury Experience"
+    ],
 
-  // Furniture Outlets
-  "0014": [
-    "Durability of Products",
-    "Customization Options",
-    "Delivery & Assembly Service",
-    "Price vs. Quality",
-    "After-Sales Support"
-  ],
+    // Art Galleries
+    "0016": [
+      "Artwork Authenticity",
+      "Curation Quality",
+      "Pricing Transparency",
+      "Artist Interaction Opportunities",
+      "Ambiance & Lighting"
+    ],
 
-  // Designer Boutiques
-  "0015": [
-    "Design Uniqueness",
-    "Fabric Quality",
-    "Fit & Sizing Accuracy",
-    "Staff Styling Advice",
-    "Luxury Experience"
-  ],
+    // Spice Markets
+    "0017": [
+      "Spice Authenticity",
+      "Vendor Knowledge",
+      "Bargaining Fairness",
+      "Cleanliness of Stalls",
+      "Freshness of Products"
+    ],
 
-  // Art Galleries
-  "0016": [
-    "Artwork Authenticity",
-    "Curation Quality",
-    "Pricing Transparency",
-    "Artist Interaction Opportunities",
-    "Ambiance & Lighting"
-  ],
+    // Antique Shops
+    "0018": [
+      "Item Authenticity",
+      "Historical Documentation",
+      "Pricing Justification",
+      "Restoration Services",
+      "Staff Expertise"
+    ],
 
-  // Spice Markets
-  "0017": [
-    "Spice Authenticity",
-    "Vendor Knowledge",
-    "Bargaining Fairness",
-    "Cleanliness of Stalls",
-    "Freshness of Products"
-  ],
+    // Supermarkets
+    "0019": [
+      "Product Variety",
+      "Checkout Speed",
+      "Staff Helpfulness",
+      "Cleanliness",
+      "Loyalty Program Benefits"
+    ],
 
-  // Antique Shops
-  "0018": [
-    "Item Authenticity",
-    "Historical Documentation",
-    "Pricing Justification",
-    "Restoration Services",
-    "Staff Expertise"
-  ],
+    // Digital Marketing Agencies
+    "0020": [
+      "Campaign Effectiveness",
+      "Reporting Clarity",
+      "Creativity of Content",
+      "Communication Responsiveness",
+      "ROI Delivered"
+    ],
 
-  // Supermarkets
-  "0019": [
-    "Product Variety",
-    "Checkout Speed",
-    "Staff Helpfulness",
-    "Cleanliness",
-    "Loyalty Program Benefits"
-  ],
+    // Freelancing Platforms
+    "0021": [
+      "Job Matching Accuracy",
+      "Payment Security",
+      "Client Review Authenticity",
+      "Platform Fees Fairness",
+      "Dispute Resolution"
+    ],
 
-  // Digital Marketing Agencies
-  "0020": [
-    "Campaign Effectiveness",
-    "Reporting Clarity",
-    "Creativity of Content",
-    "Communication Responsiveness",
-    "ROI Delivered"
-  ],
+    // Social Media Management Services
+    "0022": [
+      "Content Engagement Rates",
+      "Posting Consistency",
+      "Creativity of Strategy",
+      "Analytics Reporting",
+      "Client Collaboration"
+    ],
 
-  // Freelancing Platforms
-  "0021": [
-    "Job Matching Accuracy",
-    "Payment Security",
-    "Client Review Authenticity",
-    "Platform Fees Fairness",
-    "Dispute Resolution"
-  ],
+    // Podcast Production Studios
+    "0023": [
+      "Audio Quality",
+      "Editing Precision",
+      "Host Guidance",
+      "Turnaround Time",
+      "Equipment Modernity"
+    ],
 
-  // Social Media Management Services
-  "0022": [
-    "Content Engagement Rates",
-    "Posting Consistency",
-    "Creativity of Strategy",
-    "Analytics Reporting",
-    "Client Collaboration"
-  ],
+    // Restaurants & Cafés
+    "0024": [
+      "Food Taste & Presentation",
+      "Hygiene Standards",
+      "Service Speed",
+      "Ambiance",
+      "Value for Money"
+    ],
 
-  // Podcast Production Studios
-  "0023": [
-    "Audio Quality",
-    "Editing Precision",
-    "Host Guidance",
-    "Turnaround Time",
-    "Equipment Modernity"
-  ],
+    // Interior Redesign Services
+    "0025": [
+      "Space Utilization Creativity",
+      "Budget Adherence",
+      "Client Consultation Quality",
+      "Project Timeliness",
+      "Sustainability of Materials"
+    ],
 
-  // Restaurants & Cafés
-  "0024": [
-    "Food Taste & Presentation",
-    "Hygiene Standards",
-    "Service Speed",
-    "Ambiance",
-    "Value for Money"
-  ],
+    // Dropshipping Businesses
+    "0026": [
+      "Product Sourcing Reliability",
+      "Shipping Time",
+      "Customer Complaint Handling",
+      "Profit Margins",
+      "Supplier Communication"
+    ],
 
-  // Interior Redesign Services
-  "0025": [
-    "Space Utilization Creativity",
-    "Budget Adherence",
-    "Client Consultation Quality",
-    "Project Timeliness",
-    "Sustainability of Materials"
-  ],
+    // Courier Services
+    "0027": [
+      "Delivery Timeliness",
+      "Parcel Condition",
+      "Tracking Accuracy",
+      "Customer Support",
+      "Pricing Transparency"
+    ],
 
-  // Dropshipping Businesses
-  "0026": [
-    "Product Sourcing Reliability",
-    "Shipping Time",
-    "Customer Complaint Handling",
-    "Profit Margins",
-    "Supplier Communication"
-  ],
+    // Insurance Providers
+    "0028": [
+      "Claim Processing Speed",
+      "Policy Clarity",
+      "Agent Support",
+      "Coverage Flexibility",
+      "Premium Fairness"
+    ],
 
-  // Courier Services
-  "0027": [
-    "Delivery Timeliness",
-    "Parcel Condition",
-    "Tracking Accuracy",
-    "Customer Support",
-    "Pricing Transparency"
-  ],
+    // Telecom Services
+    "0029": [
+      "Network Reliability",
+      "Data Speed",
+      "Billing Transparency",
+      "Customer Service",
+      "Promotional Offers"
+    ],
 
-  // Insurance Providers
-  "0028": [
-    "Claim Processing Speed",
-    "Policy Clarity",
-    "Agent Support",
-    "Coverage Flexibility",
-    "Premium Fairness"
-  ],
+    // TV & Streaming Services
+    "0030": [
+      "Content Variety",
+      "Streaming Quality",
+      "Subscription Pricing",
+      "User Interface",
+      "Customer Support"
+    ],
 
-  // Telecom Services
-  "0029": [
-    "Network Reliability",
-    "Data Speed",
-    "Billing Transparency",
-    "Customer Service",
-    "Promotional Offers"
-  ],
+    // Vehicle Garages
+    "0031": [
+      "Repair Durability",
+      "Cost Transparency",
+      "Mechanic Expertise",
+      "Parts Availability",
+      "Cleanliness of Facility"
+    ],
 
-  // TV & Streaming Services
-  "0030": [
-    "Content Variety",
-    "Streaming Quality",
-    "Subscription Pricing",
-    "User Interface",
-    "Customer Support"
-  ],
+    // Salons & Beauty Parlors
+    "0032": [
+      "Service Hygiene",
+      "Staff Skill Level",
+      "Product Quality Used",
+      "Wait Time Management",
+      "Longevity of Results"
+    ],
 
-  // Vehicle Garages
-  "0031": [
-    "Repair Durability",
-    "Cost Transparency",
-    "Mechanic Expertise",
-    "Parts Availability",
-    "Cleanliness of Facility"
-  ],
+    // Grocery Stores
+    "0033": [
+      "Stock Freshness",
+      "Pricing Competitiveness",
+      "Checkout Efficiency",
+      "Staff Friendliness",
+      "Ease of Navigation"
+    ],
 
-  // Salons & Beauty Parlors
-  "0032": [
-    "Service Hygiene",
-    "Staff Skill Level",
-    "Product Quality Used",
-    "Wait Time Management",
-    "Longevity of Results"
-  ],
+    // Phone & Laptop Retailers
+    "0034": [
+      "Product Authenticity (Genuine Brands)",
+      "Warranty Clarity",
+      "After-Sales Support",
+      "Pricing vs. Market Rates",
+      "Demo & Testing Facilities"
+    ],
 
-  // Grocery Stores
-  "0033": [
-    "Stock Freshness",
-    "Pricing Competitiveness",
-    "Checkout Efficiency",
-    "Staff Friendliness",
-    "Ease of Navigation"
-  ],
+    // Furniture Shops
+    "0035": [
+      "Assembly Ease",
+      "Material Quality",
+      "Design Modernity",
+      "Delivery Punctuality",
+      "Customization Options"
+    ],
 
-  // Phone & Laptop Retailers
-  "0034": [
-    "Product Authenticity (Genuine Brands)",
-    "Warranty Clarity",
-    "After-Sales Support",
-    "Pricing vs. Market Rates",
-    "Demo & Testing Facilities"
-  ],
+    // Technical Repair Shops
+    "0036": [
+      "Diagnostic Accuracy",
+      "Repair Cost Fairness",
+      "Replacement Part Quality",
+      "Technician Communication",
+      "Service Warranty"
+    ],
 
-  // Furniture Shops
-  "0035": [
-    "Assembly Ease",
-    "Material Quality",
-    "Design Modernity",
-    "Delivery Punctuality",
-    "Customization Options"
-  ],
+    // Transport Services (Ride-Hailing, Bus/Train)
+    "0037": [
+      "Driver/Rider Behavior",
+      "Vehicle Cleanliness",
+      "Fare Accuracy",
+      "Booking App Reliability",
+      "Safety Features"
+    ],
 
-  // Technical Repair Shops
-  "0036": [
-    "Diagnostic Accuracy",
-    "Repair Cost Fairness",
-    "Replacement Part Quality",
-    "Technician Communication",
-    "Service Warranty"
-  ],
+    // Ayurvedic & Herbal Stores
+    "0038": [
+      "Product Purity",
+      "Staff Knowledge",
+      "Packaging Sustainability",
+      "Effectiveness of Remedies",
+      "Price vs. Benefits"
+    ],
 
-  // Transport Services (Ride-Hailing, Bus/Train)
-  "0037": [
-    "Driver/Rider Behavior",
-    "Vehicle Cleanliness",
-    "Fare Accuracy",
-    "Booking App Reliability",
-    "Safety Features"
-  ],
+    // Gems & Jewellery Shops
+    "0039": [
+      "Gem Certification Authenticity",
+      "Design Uniqueness",
+      "Pricing Transparency",
+      "Customization Services",
+      "After-Purchase Cleaning/Polishing"
+    ],
 
-  // Ayurvedic & Herbal Stores
-  "0038": [
-    "Product Purity",
-    "Staff Knowledge",
-    "Packaging Sustainability",
-    "Effectiveness of Remedies",
-    "Price vs. Benefits"
-  ],
+    // Bookstores
+    "0040": [
+      "Book Variety",
+      "Staff Recommendations",
+      "Seating/Reading Areas",
+      "Event Hosting Quality",
+      "Loyalty Discounts"
+    ],
 
-  // Gems & Jewellery Shops
-  "0039": [
-    "Gem Certification Authenticity",
-    "Design Uniqueness",
-    "Pricing Transparency",
-    "Customization Services",
-    "After-Purchase Cleaning/Polishing"
-  ],
+    // Floral Shops
+    "0041": [
+      "Flower Freshness",
+      "Arrangement Creativity",
+      "Delivery Timeliness",
+      "Pricing Fairness",
+      "Seasonal Variety"
+    ],
 
-  // Bookstores
-  "0040": [
-    "Book Variety",
-    "Staff Recommendations",
-    "Seating/Reading Areas",
-    "Event Hosting Quality",
-    "Loyalty Discounts"
-  ],
+    // Fitness Centers
+    "0042": [
+      "Equipment Maintenance",
+      "Trainer Expertise",
+      "Cleanliness",
+      "Class Variety",
+      "Membership Value"
+    ],
 
-  // Floral Shops
-  "0041": [
-    "Flower Freshness",
-    "Arrangement Creativity",
-    "Delivery Timeliness",
-    "Pricing Fairness",
-    "Seasonal Variety"
-  ],
+    // Boat-Building Workshops
+    "0043": [
+      "Craftsmanship Quality",
+      "Material Durability",
+      "Project Timeliness",
+      "Cost Estimation Accuracy",
+      "Custom Design Support"
+    ],
 
-  // Fitness Centers
-  "0042": [
-    "Equipment Maintenance",
-    "Trainer Expertise",
-    "Cleanliness",
-    "Class Variety",
-    "Membership Value"
-  ],
+    // Coconut Product Exporters
+    "0044": [
+      "Product Purity",
+      "Eco-Friendly Packaging",
+      "Export Documentation Support",
+      "Bulk Order Discounts",
+      "Supplier Reliability"
+    ],
 
-  // Boat-Building Workshops
-  "0043": [
-    "Craftsmanship Quality",
-    "Material Durability",
-    "Project Timeliness",
-    "Cost Estimation Accuracy",
-    "Custom Design Support"
-  ],
+    // 3D Printing Studios
+    "0045": [
+      "Print Accuracy",
+      "Material Options",
+      "Turnaround Time",
+      "Cost per Project",
+      "Design Consultation"
+    ],
 
-  // Coconut Product Exporters
-  "0044": [
-    "Product Purity",
-    "Eco-Friendly Packaging",
-    "Export Documentation Support",
-    "Bulk Order Discounts",
-    "Supplier Reliability"
-  ],
-
-  // 3D Printing Studios
-  "0045": [
-    "Print Accuracy",
-    "Material Options",
-    "Turnaround Time",
-    "Cost per Project",
-    "Design Consultation"
-  ],
-
-  // EV Charging Stations
-  "0046": [
-    "Charging Speed",
-    "Station Availability",
-    "Payment Method Flexibility",
-    "Safety Standards",
-    "App Integration for Reservations"
-  ]
-};
+    // EV Charging Stations
+    "0046": [
+      "Charging Speed",
+      "Station Availability",
+      "Payment Method Flexibility",
+      "Safety Standards",
+      "App Integration for Reservations"
+    ]
+  };
 
   Future<void> updateItemReviewSummary(String itemId) async {
     try {
@@ -1044,21 +944,19 @@ final categoryCriteriaa = {
 
       await ItemReviewRepository().createOrUpdateSummary(summary);
 
-
       // Create/Update Badge
-    final badge = Badge_item(
-      itemId: itemId,
-      itemName: item.name,
-      categoryId: item.categoryId,
-      mapLocation: item.mapLocation,
-      quinceUsersCount: metrics['quinceUsersCount'] as int,
-      totalReviews: metrics['totalReviews'] as int,
-      reviewPoints: metrics['reviewPoints'] as Map<String, double>,
-      badReviewPercentage: 0.0,
-      lastUpdated: DateTime.now(),
-    );
-    await BadgeRepository().createOrUpdateBadge(badge);
-    
+      final badge = Badge_item(
+        itemId: itemId,
+        itemName: item.name,
+        categoryId: item.categoryId,
+        mapLocation: item.mapLocation,
+        quinceUsersCount: metrics['quinceUsersCount'] as int,
+        totalReviews: metrics['totalReviews'] as int,
+        reviewPoints: metrics['reviewPoints'] as Map<String, double>,
+        badReviewPercentage: 0.0,
+        lastUpdated: DateTime.now(),
+      );
+      await BadgeRepository().createOrUpdateBadge(badge);
     } catch (e) {
       Get.log('Failed to update summary for $itemId: $e');
       Get.snackbar(

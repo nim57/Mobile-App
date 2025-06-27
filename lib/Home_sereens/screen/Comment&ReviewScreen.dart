@@ -144,17 +144,34 @@ class _CommentReviewScreenState extends State<CommentReviewScreen> {
       );
 
   Widget _combinedContent() {
+    
     final combined = [
       ...reviewController.reviews,
       ...commentController.comments
     ];
+
+    if (combined.isEmpty) {
+  return const Center(
+    child: Padding(
+      padding: EdgeInsets.all(20.0),
+      child: Text(
+        'No reviews or comments yet',
+        style: TextStyle(fontSize: 16),
+      ),
+    ),
+  );
+}
     combined.sort((a, b) {
-      final aTime =
-          a is ReviewModel ? a.timestamp : (a as CommentModel).timestamp;
-      final bTime =
-          b is ReviewModel ? b.timestamp : (b as CommentModel).timestamp;
-      return bTime.compareTo(aTime);
-    });
+  DateTime aTime = a is ReviewModel 
+      ? (a.timestamp).toDate() 
+      : (a as CommentModel).timestamp.toDate();
+      
+  DateTime bTime = b is ReviewModel 
+      ? (b.timestamp).toDate() 
+      : (b as CommentModel).timestamp.toDate();
+      
+  return bTime.compareTo(aTime); // Newest first
+});
     return Column(
       children: [
         _headerInfo(),
@@ -383,9 +400,7 @@ class ReplyTile extends StatelessWidget {
     final isCurrentUser = userController.user.value.id == reply.authorId;
 
     return Container(
-      
       padding: const EdgeInsets.symmetric(vertical: 4.0),
-      
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -613,7 +628,8 @@ class _UserHeader extends StatelessWidget {
   final bool isCurrentUser;
 
   _UserHeader({required this.review})
-      : isCurrentUser = Get.find<UserController>().user.value.id == review.userId;
+      : isCurrentUser =
+            Get.find<UserController>().user.value.id == review.userId;
 
   ImageProvider getProfileImage() {
     if (review.isVisible) {
